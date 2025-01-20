@@ -1,7 +1,9 @@
 import requests
 import json
+import random
 from UserInitializer import UserManager
 from openai import OpenAI
+
 
 client = OpenAI(api_key="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")
 class LessonInitializer:
@@ -18,9 +20,14 @@ class LessonInitializer:
 
         for sub_subject in sub_subjects:
             lesson_segment = self.create_teaching_segment(sub_subject)
+            mc_question = self.generate_mc_question(sub_subject)
 
             print(f"\n* {sub_subject}\n")  # Prints only the segment title
             print(lesson_segment)  # Prints the generated lesson content
+            print("\nQuestion: " + mc_question["question"])
+            for idx, option in enumerate(mc_question["options"], 1):
+                print(f"{idx}. {option}")
+
             print("\n" + "=" * 80 + "\n")
 
             # Ensure user input before moving to the next segment
@@ -29,6 +36,21 @@ class LessonInitializer:
                 if user_input.strip() == "":  # Only allows Enter to continue
                     break
 
+    def generate_mc_question(self, content_item):
+        correct_answer = f"Understanding {content_item}"
+        wrong_answers = [
+            f"Basics of unrelated topic",
+            f"Advanced {content_item} principles",
+            f"Common myths about {content_item}"
+        ]
+        options = [correct_answer] + wrong_answers
+        random.shuffle(options)
+
+        question = f"What is essential to learn about {content_item}?"
+        return {
+            "question": question,
+            "options": options
+        }
 
     def generate_sub_subjects(self, subject):
         prompt = f"""
