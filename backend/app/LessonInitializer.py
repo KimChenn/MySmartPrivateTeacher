@@ -11,6 +11,7 @@ class LessonInitializer:
         self.user = user
         self.api_key = api_key
 
+
     def initialize_lesson(self, subject):
         sub_subjects = self.generate_sub_subjects(subject)
 
@@ -28,18 +29,23 @@ class LessonInitializer:
             for idx, option in enumerate(mc_question["options"], 1):
                 print(f"{idx}. {option}")
 
-            print("\n" + "=" * 80 + "\n")
+            correct_index = mc_question["options"].index(mc_question["correct_answer"]) + 1
+            user_answer = input("Enter the number of the correct answer: ")
+
+            if user_answer.strip() == str(correct_index):
+                print("Correct! Let's move on.\n")
+            else:
+                print(f"Incorrect. The correct answer was {correct_index}. {mc_question['correct_answer']}\n")
+
+            print("=" * 80 + "\n")
 
             # Ensure user input before moving to the next segment
-            while True:
-                user_input = input("Press Enter to continue to the next segment...\n")
-                if user_input.strip() == "":  # Only allows Enter to continue
-                    break
+            input("Press Enter to continue to the next segment...\n")
 
     def generate_mc_question(self, content_item):
         correct_answer = f"Understanding {content_item}"
         wrong_answers = [
-            f"Basics of unrelated topic",
+            "Basics of unrelated topic",
             f"Advanced {content_item} principles",
             f"Common myths about {content_item}"
         ]
@@ -49,9 +55,10 @@ class LessonInitializer:
         question = f"What is essential to learn about {content_item}?"
         return {
             "question": question,
-            "options": options
+            "options": options,
+            "correct_answer": correct_answer
         }
-
+    
     def generate_sub_subjects(self, subject):
         prompt = f"""
         List exactly 5 specific sub-topics for the subject "{subject}". 
