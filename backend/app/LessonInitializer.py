@@ -71,17 +71,8 @@ The question should test understanding of the topic and be moderately challengin
                 "correct_answer": question_data["correct_answer"]
             }
         except (json.JSONDecodeError, KeyError):
-            print("Error parsing the response from the API. Generating fallback question.")
-            return {
-                "question": f"What is a key aspect of {content_item}?",
-                "options": [
-                    f"Understanding {content_item}",
-                    f"Common misconceptions about {content_item}",
-                    f"Advanced principles of {content_item}",
-                    "An unrelated topic"
-                ],
-                "correct_answer": f"Understanding {content_item}"
-            }
+            print("Error parsing the response from the API.")
+            return None
 
     
     def generate_explanations(self, options, correct_answer, content_item, lesson_segment):
