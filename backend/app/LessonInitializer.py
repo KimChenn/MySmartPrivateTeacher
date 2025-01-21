@@ -35,7 +35,13 @@ class LessonInitializer:
             if user_answer.strip() == str(correct_index):
                 print("Correct! Let's move on.\n")
             else:
-                print(f"Incorrect. The correct answer was {correct_index}. {mc_question['correct_answer']}\n")
+                correct_answer = mc_question["correct_answer"]
+                explanations = self.generate_explanations(mc_question["options"], correct_answer, sub_subject, lesson_segment)
+                print(f"Incorrect. The correct answer was {correct_index}: {correct_answer}.")
+                print("Explanation:")
+                for idx, option in enumerate(mc_question["options"], 1):
+                    explanation = explanations.get(option, "Explanation unavailable.")
+                    print(f"- {option}: {explanation}")
 
             print("=" * 80 + "\n")
 
@@ -43,21 +49,59 @@ class LessonInitializer:
             input("Press Enter to continue to the next segment...\n")
 
     def generate_mc_question(self, content_item):
-        correct_answer = f"Understanding {content_item}"
-        wrong_answers = [
-            "Basics of unrelated topic",
-            f"Advanced {content_item} principles",
-            f"Common myths about {content_item}"
-        ]
-        options = [correct_answer] + wrong_answers
-        random.shuffle(options)
+        prompt = f"""You are tasked with creating a multiple-choice question for a lesson.
+The topic is: {content_item}.
 
-        question = f"What is essential to learn about {content_item}?"
-        return {
-            "question": question,
-            "options": options,
-            "correct_answer": correct_answer
-        }
+Provide the following in JSON format:
+{{
+  "question": "Your question here",
+  "correct_answer": "The correct answer here",
+  "distractors": ["Wrong answer 1", "Wrong answer 2", "Wrong answer 3"]
+}}
+The question should test understanding of the topic and be moderately challenging. The correct answer must be precise and accurate. Distractors should be plausible but clearly incorrect upon deeper reflection."""
+
+        response = self._call_openai_api(prompt, max_tokens=300)
+        try:
+            question_data = json.loads(response)
+            options = [question_data["correct_answer"]] + question_data["distractors"]
+            random.shuffle(options)
+            return {
+                "question": question_data["question"],
+                "options": options,
+                "correct_answer": question_data["correct_answer"]
+            }
+        except (json.JSONDecodeError, KeyError):
+            print("Error parsing the response from the API. Generating fallback question.")
+            return {
+                "question": f"What is a key aspect of {content_item}?",
+                "options": [
+                    f"Understanding {content_item}",
+                    f"Common misconceptions about {content_item}",
+                    f"Advanced principles of {content_item}",
+                    "An unrelated topic"
+                ],
+                "correct_answer": f"Understanding {content_item}"
+            }
+
+    
+    def generate_explanations(self, options, correct_answer, content_item, lesson_segment):
+        explanations = {}
+        for option in options:
+            if option == correct_answer:
+                prompt = f"""The topic is: {content_item}.
+                        The lesson content is as follows:
+                        {lesson_segment}
+
+                        Explain concisely in one sentence why "{option}" is the correct answer."""
+            else:
+                prompt = f"""The topic is: {content_item}.
+                        The lesson content is as follows:
+                        {lesson_segment}
+
+                        Explain concisely in one sentence why "{option}" is incorrect in the context of the lesson content."""
+            response = self._call_openai_api(prompt, max_tokens=100)
+            explanations[option] = response.strip() if response else "Explanation unavailable."
+        return explanations
     
     def generate_sub_subjects(self, subject):
         prompt = f"""
