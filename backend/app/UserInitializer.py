@@ -27,7 +27,13 @@ class UserManager:
     def load_users_from_file(self, filename):
         with open(filename, 'r') as file:
             users_data = json.load(file)
-            self.users = [UserInitializer(**data) for data in users_data]
+            self.users = [
+                UserInitializer(
+                    name=data["name"],
+                    age=data["age"],
+                    hobbies=data["hobbies"]
+                ) for data in users_data
+            ]
 
     def get_valid_name(self, prompt):
         while True:
@@ -55,21 +61,65 @@ class UserManager:
                 return hobbies
             print("Please enter at least one hobby, separated by commas if multiple.")
 
+    def display_user_progress(self, user_name, progress_manager):
+        progress = progress_manager.get_user_progress(user_name)
+        print(f"Progress for {user_name}:")
+        for topic, stats in progress.items():
+            print(f"  Topic: {topic}")
+            print(f"    Correct Answers: {stats['correct_answers']}")
+            print(f"    Total Questions: {stats['total_questions']}")
+
+
+class ProgressManager:
+    def __init__(self, filename="progress.json"):
+        self.filename = filename
+        self.progress_data = self.load_progress()
+
+    def load_progress(self):
+        try:
+            with open(self.filename, 'r') as file:
+                return json.load(file)
+        except FileNotFoundError:
+            return {}
+
+    def save_progress(self):
+        with open(self.filename, 'w') as file:
+            json.dump(self.progress_data, file, indent=4)
+
+    def update_user_progress(self, user_name, topic, correct_answers, total_questions):
+        if user_name not in self.progress_data:
+            self.progress_data[user_name] = {}
+        if topic not in self.progress_data[user_name]:
+            self.progress_data[user_name][topic] = {"correct_answers": 0, "total_questions": 0}
+
+        self.progress_data[user_name][topic]["correct_answers"] += correct_answers
+        self.progress_data[user_name][topic]["total_questions"] += total_questions
+        self.save_progress()
+
+    def get_user_progress(self, user_name):
+        return self.progress_data.get(user_name, {})
 
 # Example usage
 if __name__ == "__main__":
-    manager = UserManager()
-    # Collect user profile data (this would typically come from a user interface)
-    name = manager.get_valid_name("Enter your name: ")
-    age = manager.get_valid_age("Enter your age: ")
-    hobbies = manager.get_valid_hobbies("Enter your hobbies (comma-separated): ")
+    user_manager = UserManager()
+    progress_manager = ProgressManager()
+
+    # Collect user profile data
+    name = user_manager.get_valid_name("Enter your name: ")
+    age = user_manager.get_valid_age("Enter your age: ")
+    hobbies = user_manager.get_valid_hobbies("Enter your hobbies (comma-separated): ")
 
     # Create a new user profile
     user = UserInitializer(name, age, hobbies)
-    manager.add_user(user)
-    # Save users to a file
-    manager.save_users_to_file('users.json')
-    # Load profiles from a file (for testing)
-    manager.load_users_from_file('users.json')
-    for user in manager.users:
-        print(user.to_dict())
+    user_manager.add_user(user)
+
+    # Save and load users
+    user_manager.save_users_to_file('users.json')
+    user_manager.load_users_from_file('users.json')
+
+    # Update progress
+    progress_manager.update_user_progress(name, "Math", 5, 6)
+    progress_manager.update_user_progress(name, "Science", 3, 4)
+
+    # Display progress
+    user_manager.display_user_progress(name, progress_manager)

@@ -2,6 +2,7 @@ import requests
 import json
 import random
 from UserInitializer import UserManager
+from UserInitializer import ProgressManager
 from openai import OpenAI
 import pyttsx3  # Library for text-to-speech
 
@@ -11,6 +12,7 @@ class LessonInitializer:
     def __init__(self, user, api_key):
         self.user = user
         self.api_key = api_key
+        self.progress_manager = ProgressManager()  # Initialize ProgressManager
         self.tts_engine = pyttsx3.init()  # Initialize text-to-speech engine
 
     def speak(self, text):
@@ -84,6 +86,16 @@ class LessonInitializer:
 
         print(f"Wrong Answers: {wrong_count}")
         self.speak(f"You answered {wrong_count} questions incorrectly.")
+
+        # Update progress
+        self.progress_manager.update_user_progress(
+            user_name=self.user.name,
+            topic=subject,
+            correct_answers=correct_count,
+            total_questions=correct_count + wrong_count
+        )
+        print("Your progress has been updated and saved!")
+        self.speak("Your progress has been updated and saved.")
 
         # Allow the student to ask questions after the lesson
         print("\nYou can now ask questions about the lesson. (Type 'exit' to finish)")
