@@ -3,7 +3,7 @@ import json
 import random
 from UserInitializer import UserManager
 from openai import OpenAI
-
+import pyttsx3  # Library for text-to-speech
 
 client = OpenAI(api_key="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")
 
@@ -11,6 +11,12 @@ class LessonInitializer:
     def __init__(self, user, api_key):
         self.user = user
         self.api_key = api_key
+        self.tts_engine = pyttsx3.init()  # Initialize text-to-speech engine
+
+    def speak(self, text):
+        """Convert text to speech."""
+        self.tts_engine.say(text)
+        self.tts_engine.runAndWait()
 
     def initialize_lesson(self, subject):
         sub_subjects = self.generate_sub_subjects(subject)
@@ -31,25 +37,39 @@ class LessonInitializer:
             all_segments.append({"sub_subject": sub_subject, "lesson_segment": lesson_segment})
 
             print(f"\n* {sub_subject}\n")  # Prints only the segment title
+            self.speak(f"Topic: {sub_subject}")  # Speak the segment title
+
             print(lesson_segment)  # Prints the generated lesson content
+            self.speak(lesson_segment)  # Speak the lesson content
+
             print("\nQuestion: " + mc_question["question"])
+            self.speak("Question: " + mc_question["question"])  # Speak the question
+
             for idx, option in enumerate(mc_question["options"], 1):
                 print(f"{idx}. {option}")
+                self.speak(f"Option {idx}: {option}")  # Speak each option
 
             correct_index = mc_question["options"].index(mc_question["correct_answer"]) + 1
             user_answer = input("Enter the number of the correct answer: ")
 
             if user_answer.strip() == str(correct_index):
                 print("Correct! Let's move on.\n")
+                self.speak("Correct! Let's move on.")
                 correct_count += 1  # Increment correct counter
             else:
                 correct_answer = mc_question["correct_answer"]
                 explanations = self.generate_explanations(mc_question["options"], correct_answer, sub_subject, lesson_segment)
                 print(f"Incorrect. The correct answer was {correct_index}: {correct_answer}.")
+                self.speak(f"Incorrect. The correct answer was {correct_index}: {correct_answer}.")
+
                 print("Explanation:")
+                self.speak("Here is the explanation.")
+
                 for idx, option in enumerate(mc_question["options"], 1):
                     explanation = explanations.get(option, "Explanation unavailable.")
                     print(f"- {option}: {explanation}")
+                    self.speak(f"Option {idx}: {explanation}")
+
                 wrong_count += 1  # Increment wrong counter
 
             print("=" * 80 + "\n")
@@ -57,18 +77,27 @@ class LessonInitializer:
 
         # Display final results
         print(f"\nLesson Complete! Here are your results:")
+        self.speak("Lesson Complete! Here are your results.")
+
         print(f"Correct Answers: {correct_count}")
+        self.speak(f"You answered {correct_count} questions correctly.")
+
         print(f"Wrong Answers: {wrong_count}")
+        self.speak(f"You answered {wrong_count} questions incorrectly.")
 
         # Allow the student to ask questions after the lesson
         print("\nYou can now ask questions about the lesson. (Type 'exit' to finish)")
+        self.speak("You can now ask questions about the lesson. Type exit to finish.")
+
         while True:
             student_question = input("Your question: ").strip()
             if student_question.lower() == "exit":
                 print("Thank you for participating! Goodbye!")
+                self.speak("Thank you for participating! Goodbye!")
                 break
             answer = self.generate_answer_to_question(student_question, all_segments)
             print(f"Answer: {answer}")
+            self.speak(f"Answer: {answer}")
 
     def generate_mc_question(self, content_item):
         prompt = f"""You are tasked with creating a multiple-choice question for a lesson.
