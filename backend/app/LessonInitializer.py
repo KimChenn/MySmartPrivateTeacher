@@ -22,9 +22,13 @@ class LessonInitializer:
         correct_count = 0  # Counter for correct answers
         wrong_count = 0    # Counter for wrong answers
 
+        all_segments = []  # Store all lesson segments for reference
+
         for sub_subject in sub_subjects:
             lesson_segment = self.create_teaching_segment(sub_subject)
             mc_question = self.generate_mc_question(sub_subject)
+
+            all_segments.append({"sub_subject": sub_subject, "lesson_segment": lesson_segment})
 
             print(f"\n* {sub_subject}\n")  # Prints only the segment title
             print(lesson_segment)  # Prints the generated lesson content
@@ -55,6 +59,16 @@ class LessonInitializer:
         print(f"\nLesson Complete! Here are your results:")
         print(f"Correct Answers: {correct_count}")
         print(f"Wrong Answers: {wrong_count}")
+
+        # Allow the student to ask questions after the lesson
+        print("\nYou can now ask questions about the lesson. (Type 'exit' to finish)")
+        while True:
+            student_question = input("Your question: ").strip()
+            if student_question.lower() == "exit":
+                print("Thank you for participating! Goodbye!")
+                break
+            answer = self.generate_answer_to_question(student_question, all_segments)
+            print(f"Answer: {answer}")
 
     def generate_mc_question(self, content_item):
         prompt = f"""You are tasked with creating a multiple-choice question for a lesson.
@@ -90,6 +104,20 @@ The question should test understanding of the topic and be moderately challengin
                 ],
                 "correct_answer": f"Understanding {content_item}"
             }
+
+    def generate_answer_to_question(self, student_question, all_segments):
+        combined_content = "\n\n".join([f"Topic: {segment['sub_subject']}\n{segment['lesson_segment']}" for segment in all_segments])
+        prompt = f"""
+        A student asked the following question:
+        "{student_question}"
+
+        The lesson content is as follows:
+        {combined_content}
+
+        Provide a clear and concise answer to the student's question in 2-3 sentences.
+        """
+        response = self._call_openai_api(prompt, max_tokens=200)
+        return response.strip() if response else "I'm sorry, I couldn't generate an answer to your question."
 
     def generate_explanations(self, options, correct_answer, content_item, lesson_segment):
         explanations = {}
