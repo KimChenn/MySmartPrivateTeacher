@@ -6,11 +6,11 @@ from openai import OpenAI
 
 
 client = OpenAI(api_key="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")
+
 class LessonInitializer:
     def __init__(self, user, api_key):
         self.user = user
         self.api_key = api_key
-
 
     def initialize_lesson(self, subject):
         sub_subjects = self.generate_sub_subjects(subject)
@@ -18,6 +18,9 @@ class LessonInitializer:
         if not sub_subjects:
             print("No subtopics could be generated.")
             return ""
+
+        correct_count = 0  # Counter for correct answers
+        wrong_count = 0    # Counter for wrong answers
 
         for sub_subject in sub_subjects:
             lesson_segment = self.create_teaching_segment(sub_subject)
@@ -34,6 +37,7 @@ class LessonInitializer:
 
             if user_answer.strip() == str(correct_index):
                 print("Correct! Let's move on.\n")
+                correct_count += 1  # Increment correct counter
             else:
                 correct_answer = mc_question["correct_answer"]
                 explanations = self.generate_explanations(mc_question["options"], correct_answer, sub_subject, lesson_segment)
@@ -42,11 +46,15 @@ class LessonInitializer:
                 for idx, option in enumerate(mc_question["options"], 1):
                     explanation = explanations.get(option, "Explanation unavailable.")
                     print(f"- {option}: {explanation}")
+                wrong_count += 1  # Increment wrong counter
 
             print("=" * 80 + "\n")
-
-            # Ensure user input before moving to the next segment
             input("Press Enter to continue to the next segment...\n")
+
+        # Display final results
+        print(f"\nLesson Complete! Here are your results:")
+        print(f"Correct Answers: {correct_count}")
+        print(f"Wrong Answers: {wrong_count}")
 
     def generate_mc_question(self, content_item):
         prompt = f"""You are tasked with creating a multiple-choice question for a lesson.
@@ -71,10 +79,18 @@ The question should test understanding of the topic and be moderately challengin
                 "correct_answer": question_data["correct_answer"]
             }
         except (json.JSONDecodeError, KeyError):
-            print("Error parsing the response from the API.")
-            return None
+            print("Error parsing the response from the API. Generating fallback question.")
+            return {
+                "question": f"What is a key aspect of {content_item}?",
+                "options": [
+                    f"Understanding {content_item}",
+                    f"Common misconceptions about {content_item}",
+                    f"Advanced principles of {content_item}",
+                    "An unrelated topic"
+                ],
+                "correct_answer": f"Understanding {content_item}"
+            }
 
-    
     def generate_explanations(self, options, correct_answer, content_item, lesson_segment):
         explanations = {}
         for option in options:
@@ -83,17 +99,17 @@ The question should test understanding of the topic and be moderately challengin
                         The lesson content is as follows:
                         {lesson_segment}
 
-                        Explain concisely in one sentence why "{option}" is the correct answer."""
+                        Explain concisely in one sentence why \"{option}\" is the correct answer."""
             else:
                 prompt = f"""The topic is: {content_item}.
                         The lesson content is as follows:
                         {lesson_segment}
 
-                        Explain concisely in one sentence why "{option}" is incorrect in the context of the lesson content."""
+                        Explain concisely in one sentence why \"{option}\" is incorrect in the context of the lesson content."""
             response = self._call_openai_api(prompt, max_tokens=100)
             explanations[option] = response.strip() if response else "Explanation unavailable."
         return explanations
-    
+
     def generate_sub_subjects(self, subject):
         prompt = f"""
         List exactly 5 specific sub-topics for the subject "{subject}". 
@@ -151,5 +167,4 @@ if __name__ == "__main__":
     api_key = "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"
     subject = input("What subject would you like a lesson on today? ")
     generator = LessonInitializer(user, api_key)
-    lesson = generator.initialize_lesson(subject)
-    print(f"Custom Lesson on {subject}:\n{lesson}\n{'=' * 80}\n")
+    generator.initialize_lesson(subject)
