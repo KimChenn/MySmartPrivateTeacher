@@ -72,6 +72,18 @@ class LessonInitializer:
                                 return fuzzy_number
                     print("Invalid response, please say a number between 1 and 4.")
 
+    def recognize_speech_text(self):
+        """Recognizes free-form speech for user questions."""
+        with sd.RawInputStream(samplerate=self.samplerate, blocksize=8000, device=None,
+                               dtype='int16', channels=1, callback=self.callback):
+            recognizer = vosk.KaldiRecognizer(self.model, self.samplerate)
+            print("Speak now...")
+            while True:
+                data = self.q.get()
+                if recognizer.AcceptWaveform(data):
+                    result = json.loads(recognizer.Result())
+                    print(f"Recognized speech: {result}")  # Debugging print
+                    return result.get("text", "").strip()
 
     def initialize_lesson(self, subject):
         sub_subjects = self.generate_sub_subjects(subject)
@@ -152,16 +164,17 @@ class LessonInitializer:
         self.speak("Your progress has been updated and saved.")
 
         # Allow the student to ask questions after the lesson
-        print("\nYou can now ask questions about the lesson. (Type 'exit' to finish)")
-        self.speak("You can now ask questions about the lesson. Type exit to finish.")
+        print("\nYou can now ask questions about the lesson. Say 'exit' to finish.")
+        self.speak("You can now ask questions about the lesson. Say 'exit' to finish.")
 
         while True:
-            student_question = input("Your question: ").strip()
+            self.speak("What is your question?")
+            student_question = self.recognize_speech_text()
             if student_question.lower() == "exit":
                 print("Thank you for participating! Goodbye!")
                 self.speak("Thank you for participating! Goodbye!")
                 break
-            answer = self.generate_answer_to_question(student_question, all_segments)
+            answer = self.generate_answer_to_question(student_question,all_segments)
             print(f"Answer: {answer}")
             self.speak(f"Answer: {answer}")
 
