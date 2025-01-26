@@ -1,11 +1,15 @@
 import requests
 import json
 import random
+import sys
+import sounddevice as sd
+import queue
+import json
+import vosk
 from UserInitializer import UserManager
 from UserInitializer import ProgressManager
 from openai import OpenAI
-import pyttsx3  # Library for text-to-speech
-import speech_recognition as sr
+import pyttsx3 
 
 client = OpenAI(api_key="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")
 
@@ -15,125 +19,138 @@ class LessonInitializer:
         self.api_key = api_key
         self.progress_manager = ProgressManager()  # Initialize ProgressManager
         self.tts_engine = pyttsx3.init()  # Initialize text-to-speech engine
-        self.recognizer = sr.Recognizer()  # Initialize speech recognizer
+        self.model = vosk.Model("/Users/ohadhacham/Desktop/idea_to_app/MySmartPrivateTeacher/backend/app/vosk-model-small-en-us-0.15")  # Path to Vosk model directory
+        self.q = queue.Queue()
+        self.samplerate = 16000
+        self.number_map = {"one": 1, "two": 2, "three": 3, "four": 4}
 
     def speak(self, text):
-        """Convert text to speech."""
-        self.tts_engine.say(text)
-        self.tts_engine.runAndWait()
+        engine = pyttsx3.init()
+    
+        voices = engine.getProperty('voices')
+    
+        engine.setProperty('rate', 300)  # Adjust speed if needed
+        engine.setProperty('voice', voices[14].id) 
+    
+        engine.say(text)
+        engine.runAndWait()
 
-    def listen(self):
-        """Capture voice input, process it, and return as text."""
-        number_map = {
-            "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
-            "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10
-        }
-        with sr.Microphone() as source:
-            self.speak("Listening for your command...")
-            print("Listening for your command...")
-            try:
-                audio = self.recognizer.listen(source, timeout=10)
-                command = self.recognizer.recognize_google(audio).lower().strip()
-                print(f"You said: {command}")
+    def callback(self, indata, frames, time, status):
+        if status:
+            print(status, file=sys.stderr)
+        self.q.put(bytes(indata))
 
-                # Map spoken words to numbers if applicable
-                if command in number_map:
-                    return number_map[command]
-                elif command.isdigit():
-                    return int(command)
-                else:
-                    return command
-            except sr.WaitTimeoutError:
-                self.speak("No command heard. Please try again.")
-                return None
-            except sr.UnknownValueError:
-                self.speak("Sorry, I didn't understand that. Please repeat.")
-                return None
-            except sr.RequestError:
-                self.speak("Speech recognition is not available right now.")
-                return None
+    def recognize_speech(self):
+        with sd.RawInputStream(samplerate=self.samplerate, blocksize=8000, device=None,
+                               dtype='int16', channels=1, callback=self.callback):
+            recognizer = vosk.KaldiRecognizer(self.model, self.samplerate)
+            print("Say the number (1-4):")
+            while True:
+                data = self.q.get()
+                if recognizer.AcceptWaveform(data):
+                    result = json.loads(recognizer.Result())
+                    if 'text' in result:
+                        text = result['text'].strip()
+                        print(f"Recognized speech: {text}")  # Debugging print
+                        if text.isdigit() and 1 <= int(text) <= 4:
+                            return int(text)
+                        elif text in self.number_map:
+                            return self.number_map[text]
+                        else:
+                            print("Invalid response, please say a number between 1 and 4.")
+
 
     def initialize_lesson(self, subject):
         sub_subjects = self.generate_sub_subjects(subject)
-        if not sub_subjects:
-            self.speak("No subtopics could be generated.")
-            return
 
-        correct_count = 0
-        wrong_count = 0
-        all_segments = []
+        if not sub_subjects:
+            print("No subtopics could be generated.")
+            return ""
+
+        correct_count = 0  # Counter for correct answers
+        wrong_count = 0    # Counter for wrong answers
+
+        all_segments = []  # Store all lesson segments for reference
 
         for sub_subject in sub_subjects:
             lesson_segment = self.create_teaching_segment(sub_subject)
             mc_question = self.generate_mc_question(sub_subject)
+
             all_segments.append({"sub_subject": sub_subject, "lesson_segment": lesson_segment})
 
-            self.speak(f"Topic: {sub_subject}")
-            print(f"\n* {sub_subject}\n")
-            print(lesson_segment)
-            self.speak(lesson_segment)
+            print(f"\n* {sub_subject}\n")  # Prints only the segment title
+            self.speak(f"Topic: {sub_subject}")  # Speak the segment title
+
+            print(lesson_segment)  # Prints the generated lesson content
+            self.speak(lesson_segment)  # Speak the lesson content
 
             print("\nQuestion: " + mc_question["question"])
-            self.speak("Question: " + mc_question["question"])
+            self.speak("Question: " + mc_question["question"])  # Speak the question
 
             for idx, option in enumerate(mc_question["options"], 1):
                 print(f"{idx}. {option}")
-                self.speak(f"Option {idx}: {option}")
+                self.speak(f"Option {idx}: {option}")  # Speak each option
 
-            while True:
-                command = self.listen()
+            correct_index = mc_question["options"].index(mc_question["correct_answer"]) + 1
+            print("Say your answer now...")
+            user_answer = self.recognize_speech()
 
-                # Handle voice or manual input for answers
-                if isinstance(command, int) and command in range(1, len(mc_question["options"]) + 1):
-                    user_answer = command
-                    correct_index = mc_question["options"].index(mc_question["correct_answer"]) + 1
-                    if user_answer == correct_index:
-                        print("Correct! Let's move on.\n")
-                        self.speak("Correct! Let's move on.")
-                        correct_count += 1
-                    else:
-                        print("Incorrect. The correct answer was " +
-                              f"{correct_index}: {mc_question['correct_answer']}.")
-                        self.speak(f"Incorrect. The correct answer was {correct_index}.")
-                        wrong_count += 1
-                    break
-                elif command in ["next", "skip"]:
-                    print("Moving to the next question.")
-                    self.speak("Moving to the next question.")
-                    break
-                elif command in ["repeat question", "repeat"]:
-                    print("Repeating the question.")
-                    self.speak("Repeating the question.")
-                    self.speak("Question: " + mc_question["question"])
-                elif command in ["end lesson", "exit"]:
-                    self.speak("Ending the lesson. Goodbye!")
-                    return
-                else:
-                    self.speak("Invalid response. Please try again.")
+            if user_answer == correct_index:
+                print("Correct! Let's move on.\n")
+                self.speak("Correct! Let's move on.")
+                correct_count += 1  # Increment correct counter
+            else:
+                correct_answer = mc_question["correct_answer"]
+                explanations = self.generate_explanations(mc_question["options"], correct_answer, sub_subject, lesson_segment)
+                print(f"Incorrect. The correct answer was {correct_index}: {correct_answer}.")
+                self.speak(f"Incorrect. The correct answer was {correct_index}: {correct_answer}.")
 
-            # Ask if the user wants to continue to the next segment
-            self.speak("Do you want to continue to the next topic?")
-            print("Do you want to continue to the next topic? (yes/no)")
-            while True:
-                command = self.listen()
-                if command in ["yes", "yeah", "continue"]:
-                    self.speak("Great, let's move on!")
-                    break
-                elif command in ["no", "stop", "exit"]:
-                    self.speak("Ending the lesson. Goodbye!")
-                    return
-                else:
-                    self.speak("I didn't understand. Please say 'yes' to continue or 'no' to exit.")
+                print("Explanation:")
+                self.speak("Here is the explanation.")
+
+                for idx, option in enumerate(mc_question["options"], 1):
+                    explanation = explanations.get(option, "Explanation unavailable.")
+                    print(f"- {option}: {explanation}")
+                    self.speak(f"Option {idx}: {explanation}")
+
+                wrong_count += 1  # Increment wrong counter
+
+            print("=" * 80 + "\n")
+            input("Press Enter to continue to the next segment...\n")
+
+        # Display final results
+        print(f"\nLesson Complete! Here are your results:")
+        self.speak("Lesson Complete! Here are your results.")
+
+        print(f"Correct Answers: {correct_count}")
+        self.speak(f"You answered {correct_count} questions correctly.")
+
+        print(f"Wrong Answers: {wrong_count}")
+        self.speak(f"You answered {wrong_count} questions incorrectly.")
 
         # Update progress
         self.progress_manager.update_user_progress(
             user_name=self.user.name,
             topic=subject,
             correct_answers=correct_count,
-            total_questions=correct_count + wrong_count,
+            total_questions=correct_count + wrong_count
         )
-        print("Your progress has been updated and saved.")
+        print("Your progress has been updated and saved!")
         self.speak("Your progress has been updated and saved.")
+
+        # Allow the student to ask questions after the lesson
+        print("\nYou can now ask questions about the lesson. (Type 'exit' to finish)")
+        self.speak("You can now ask questions about the lesson. Type exit to finish.")
+
+        while True:
+            student_question = input("Your question: ").strip()
+            if student_question.lower() == "exit":
+                print("Thank you for participating! Goodbye!")
+                self.speak("Thank you for participating! Goodbye!")
+                break
+            answer = self.generate_answer_to_question(student_question, all_segments)
+            print(f"Answer: {answer}")
+            self.speak(f"Answer: {answer}")
 
     def generate_mc_question(self, content_item):
         prompt = f"""You are tasked with creating a multiple-choice question for a lesson.

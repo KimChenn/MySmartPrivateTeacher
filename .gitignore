@@ -1,0 +1,39 @@
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore Python compiled files
+__pycache__/
+*.py[cod]
+*.so
+
+# Ignore virtual environments
+venv/
+env/
+*.venv
+
+# Ignore logs and output files
+*.log
+*.out
+*.err
+
+# Ignore Vosk model files
+backend/app/vosk-model-*/
+
+# Ignore binary and config files
+*.mdl
+*.fst
+*.int
+*.conf
+*.stats
+*.mat
+*.dubm
+*.ie
+
+# Ignore progress and temporary files
+progress.json
+*.tmp
+*.bak
+
+# Ignore VS Code settings
+.vscode/
