@@ -9,7 +9,8 @@ import vosk
 from UserInitializer import UserManager
 from UserInitializer import ProgressManager
 from openai import OpenAI
-import pyttsx3 
+import pyttsx3
+from fuzzywuzzy import fuzz
 
 client = OpenAI(api_key="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")
 
@@ -28,10 +29,8 @@ class LessonInitializer:
         engine = pyttsx3.init()
     
         voices = engine.getProperty('voices')
-    
-        engine.setProperty('rate', 300)  # Adjust speed if needed
+        engine.setProperty('rate', 400)  # Adjust speed if needed
         engine.setProperty('voice', voices[14].id) 
-    
         engine.say(text)
         engine.runAndWait()
 
@@ -40,24 +39,38 @@ class LessonInitializer:
             print(status, file=sys.stderr)
         self.q.put(bytes(indata))
 
+    def fuzzy_match_number(self, text):
+        """Uses fuzzy matching to find the closest number word."""
+        best_match = None
+        highest_score = 0
+        for word, number in self.number_map.items():
+            score = fuzz.ratio(text.lower(), word)
+            if score > highest_score and score > 70:  # Set a threshold for accuracy
+                best_match = number
+                highest_score = score
+        return best_match
+    
     def recognize_speech(self):
         with sd.RawInputStream(samplerate=self.samplerate, blocksize=8000, device=None,
                                dtype='int16', channels=1, callback=self.callback):
             recognizer = vosk.KaldiRecognizer(self.model, self.samplerate)
+            recognizer.SetMaxAlternatives(6)  # Enable recognition of homophones
             print("Say the number (1-4):")
             while True:
                 data = self.q.get()
                 if recognizer.AcceptWaveform(data):
                     result = json.loads(recognizer.Result())
-                    if 'text' in result:
-                        text = result['text'].strip()
-                        print(f"Recognized speech: {text}")  # Debugging print
-                        if text.isdigit() and 1 <= int(text) <= 4:
-                            return int(text)
-                        elif text in self.number_map:
-                            return self.number_map[text]
-                        else:
-                            print("Invalid response, please say a number between 1 and 4.")
+                    print(f"Raw recognition result: {result}")  # Debugging print
+                    if 'alternatives' in result:
+                        for alternative in result['alternatives']:
+                            text = alternative['text'].strip()
+                            print(f"Recognized alternative: {text}")  # Debugging print
+                            if text.isdigit() and 1 <= int(text) <= 4:
+                                return int(text)
+                            fuzzy_number = self.fuzzy_match_number(text)
+                            if fuzzy_number:
+                                return fuzzy_number
+                    print("Invalid response, please say a number between 1 and 4.")
 
 
     def initialize_lesson(self, subject):
