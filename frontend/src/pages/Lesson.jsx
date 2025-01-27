@@ -1,12 +1,13 @@
 import { useState } from "react";
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:8000"; // Ensure your FastAPI backend is running
+const API_BASE_URL = "http://localhost:8000"; // Ensure FastAPI is running
 
 export default function Lesson() {
   const [userName, setUserName] = useState(""); // Stores user name
   const [lessonTopic, setLessonTopic] = useState(""); // Stores lesson topic
-  const [lessonContent, setLessonContent] = useState([]); // Stores API response
+  const [lessonContent, setLessonContent] = useState([]); // Stores all lesson segments
+  const [currentSegmentIndex, setCurrentSegmentIndex] = useState(0); // Tracks current lesson step
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -19,6 +20,7 @@ export default function Lesson() {
     setLoading(true);
     setError("");
     setLessonContent([]);
+    setCurrentSegmentIndex(0); // Reset lesson index when starting a new lesson
 
     try {
       console.log("Sending request to:", `${API_BASE_URL}/start_lesson`);
@@ -36,6 +38,12 @@ export default function Lesson() {
       setError("Failed to fetch lesson. Please check backend.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const nextSegment = () => {
+    if (currentSegmentIndex < lessonContent.length - 1) {
+      setCurrentSegmentIndex(currentSegmentIndex + 1);
     }
   };
 
@@ -75,13 +83,17 @@ export default function Lesson() {
 
         {lessonContent.length > 0 && (
           <div className="mt-6 p-4 border border-gray-300 rounded-md bg-white text-center">
-            <h2 className="text-lg font-semibold">Generated Lesson:</h2>
-            {lessonContent.map((segment, index) => (
-              <div key={index} className="mt-4">
-                <h3 className="text-lg font-semibold">{segment.sub_subject}</h3>
-                <p className="text-gray-700">{segment.lesson_segment}</p>
-              </div>
-            ))}
+            <h2 className="text-lg font-semibold">{lessonContent[currentSegmentIndex].sub_subject}</h2>
+            <p className="mt-2 text-gray-700">{lessonContent[currentSegmentIndex].lesson_segment}</p>
+
+            {currentSegmentIndex < lessonContent.length - 1 && (
+              <button
+                onClick={nextSegment}
+                className="mt-4 bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition"
+              >
+                Next Lesson Segment
+              </button>
+            )}
           </div>
         )}
       </div>
