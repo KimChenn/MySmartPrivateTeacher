@@ -202,16 +202,7 @@ The question should test understanding of the topic and be moderately challengin
             }
         except (json.JSONDecodeError, KeyError):
             print("Error parsing the response from the API. Generating fallback question.")
-            return {
-                "question": f"What is a key aspect of {content_item}?",
-                "options": [
-                    f"Understanding {content_item}",
-                    f"Common misconceptions about {content_item}",
-                    f"Advanced principles of {content_item}",
-                    "An unrelated topic"
-                ],
-                "correct_answer": f"Understanding {content_item}"
-            }
+            return {None}
 
     def generate_answer_to_question(self, student_question, all_segments):
         combined_content = "\n\n".join([f"Topic: {segment['sub_subject']}\n{segment['lesson_segment']}" for segment in all_segments])
