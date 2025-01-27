@@ -71,6 +71,20 @@ export default function Lesson() {
     }
   };
 
+  const playTTS = async () => {
+    const currentSegment = lessonContent[currentSegmentIndex];
+    if (!currentSegment) return;
+
+    try {
+        console.log("Sending text-to-speech request for:", currentSegment.lesson_segment);
+        await axios.post(`${API_BASE_URL}/text_to_speech`, {
+            text: currentSegment.lesson_segment // Send as JSON object
+        });
+    } catch (err) {
+        console.error("Error playing text-to-speech:", err);
+    }
+};
+
   const currentSegment = lessonContent[currentSegmentIndex];
 
   return (
@@ -111,6 +125,14 @@ export default function Lesson() {
           <div className="mt-6 p-4 border border-gray-300 rounded-md bg-white text-center">
             <h2 className="text-lg font-semibold">{currentSegment.sub_subject}</h2>
             <p className="mt-2 text-gray-700">{currentSegment.lesson_segment}</p>
+
+            {/* Play Text-to-Speech Button */}
+            <button
+              onClick={playTTS}
+              className="mt-4 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition"
+            >
+              🔊 Listen
+            </button>
 
             {/* Ensure question_data exists before rendering */}
             {currentSegment.question_data && (

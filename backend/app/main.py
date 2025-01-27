@@ -29,7 +29,7 @@ app.add_middleware(
 
 # Initialize required components
 client = OpenAI(api_key=API_KEY)
-model_path = "/Users/ohadhacham/Desktop/idea_to_app/MySmartPrivateTeacher/backend/app/vosk-model-small-en-us-0.15"  # Update with the correct path
+model_path = "./vosk-model-small-en-us-0.15" 
 model = vosk.Model(model_path)
 tts_engine = pyttsx3.init()
 progress_manager = ProgressManager()
@@ -40,18 +40,24 @@ class LessonRequest(BaseModel):
     user: str
     subject: str
 
+class TextToSpeechRequest(BaseModel):
+    text: str
 class SpeechToTextRequest(BaseModel):
-    user: str
+    text: str
 
 class SaveProgressRequest(BaseModel):
     user: str
     lesson: str
     response: str
 
-# Helper functions for TTS and fuzzy matching
 def speak(text: str):
-    tts_engine.say(text)
-    tts_engine.runAndWait()
+    """Convert text to speech with specific settings."""
+    engine = pyttsx3.init()
+    voices = engine.getProperty('voices')
+    engine.setProperty('rate', 400)  # Adjust speed if needed
+    engine.setProperty('voice', voices[14].id)  # Set specific voice
+    engine.say(text)
+    engine.runAndWait()
 
 def fuzzy_match_number(text: str, number_map: dict):
     """Match spoken text to numbers."""
@@ -109,6 +115,18 @@ def start_lesson(request: LessonRequest):
 
     return {"lesson": lesson_content}
 
+@app.post("/text_to_speech")
+def text_to_speech(request: TextToSpeechRequest):
+    """Convert lesson text to speech and play it."""
+    try:
+        if not request.text.strip():
+            raise HTTPException(status_code=400, detail="Text input cannot be empty.")
+        
+        speak(request.text)
+        return {"message": "Speech played successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error in text-to-speech: {str(e)}")
+    
 @app.post("/speech_to_text")
 def speech_to_text(file: UploadFile = File(...)):
     """Convert speech to text."""
