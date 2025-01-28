@@ -1,6 +1,5 @@
 import { useState } from "react";
 import axios from "axios";
-import { motion } from "framer-motion";
 
 const API_BASE_URL = "http://localhost:8000"; // Ensure FastAPI is running
 
@@ -95,27 +94,23 @@ export default function Lesson() {
         <p className="text-gray-600 mb-6 text-center">
           Enter your name and a topic to start an engaging lesson experience.
         </p>
-  
-        {/* User Name Input */}
         <div className="flex flex-col gap-4">
-          <input
-            type="text"
-            placeholder="Your Name"
-            value={userName}
-            onChange={(e) => setUserName(e.target.value)}
-            className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-semibold py-3 px-4 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 placeholder-gray-200 transition-transform transform hover:scale-105"
-          />
-  
-          {/* Lesson Topic Input */}
-          <input
-            type="text"
-            placeholder="Lesson Topic (e.g., Photosynthesis)"
-            value={lessonTopic}
-            onChange={(e) => setLessonTopic(e.target.value)}
-            className="border border-gray-300 rounded-lg p-3 w-full shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          />
-        </div>
-  
+            <input
+              type="text"
+              placeholder="Your Name"
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
+              className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-semibold py-3 px-4 rounded-full placeholder-gray-200 shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-transform transform hover:scale-105"
+            />
+          
+            <input
+              type="text"
+              placeholder="Lesson Topic (e.g., Photosynthesis)"
+              value={lessonTopic}
+              onChange={(e) => setLessonTopic(e.target.value)}
+              className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-semibold py-3 px-4 rounded-full placeholder-gray-200 shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-transform transform hover:scale-105"
+            />
+
         <button
           onClick={startLesson}
           className={`mt-6 w-full bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-semibold py-3 rounded-lg hover:from-indigo-600 hover:to-blue-600 transition ${
@@ -125,7 +120,8 @@ export default function Lesson() {
         >
           {loading ? "Loading..." : "Start Lesson"}
         </button>
-  
+
+      </div>
         {error && (
           <p className="text-red-500 mt-4 text-center font-medium">{error}</p>
         )}

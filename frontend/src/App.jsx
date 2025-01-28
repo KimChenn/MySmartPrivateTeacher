@@ -30,6 +30,14 @@ const App = () => {
             </div>
           </div>
         </nav>
+
+        <header className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white py-3 shadow-md">
+          <div className="container mx-auto">
+            <h1 className="text-lg font-bold text-center">My Private Teacher</h1>
+          </div>
+        </header>
+
+
         <main className="container mx-auto py-8">
           <Routes>
             <Route path="/" element={<Home />} />
