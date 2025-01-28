@@ -7,7 +7,7 @@ import json
 import requests
 import numpy as np
 import sounddevice as sd
-from UserInitializer import ProgressManager, UserManager
+from app.UserInitializer import ProgressManager, UserManager
 from openai import OpenAI
 from fuzzywuzzy import fuzz
 import random
