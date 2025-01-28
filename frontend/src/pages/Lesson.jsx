@@ -12,6 +12,7 @@ export default function Lesson() {
   const [isCorrect, setIsCorrect] = useState(null); // Tracks if answer is correct
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [lessonStarted, setLessonStarted] = useState(false); // Tracks whether the lesson has started
 
   const startLesson = async () => {
     if (!userName.trim() || !lessonTopic.trim()) {
@@ -32,11 +33,12 @@ export default function Lesson() {
       // API request to FastAPI backend
       const res = await axios.post(`${API_BASE_URL}/start_lesson`, {
         user: userName,
-        subject: lessonTopic
+        subject: lessonTopic,
       });
 
       console.log("Response received:", res.data);
       setLessonContent(res.data.lesson || []); // Store lesson response safely
+      setLessonStarted(true); // Transition to the lesson content view
     } catch (err) {
       console.error("Error starting lesson:", err);
       setError("Failed to fetch lesson. Please check backend.");
@@ -76,25 +78,27 @@ export default function Lesson() {
     if (!currentSegment) return;
 
     try {
-        console.log("Sending text-to-speech request for:", currentSegment.lesson_segment);
-        await axios.post(`${API_BASE_URL}/text_to_speech`, {
-            text: currentSegment.lesson_segment // Send as JSON object
-        });
+      console.log("Sending text-to-speech request for:", currentSegment.lesson_segment);
+      await axios.post(`${API_BASE_URL}/text_to_speech`, {
+        text: currentSegment.lesson_segment, // Send as JSON object
+      });
     } catch (err) {
-        console.error("Error playing text-to-speech:", err);
+      console.error("Error playing text-to-speech:", err);
     }
-};
+  };
 
   const currentSegment = lessonContent[currentSegmentIndex];
 
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 p-6">
-      <div className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-lg">
-        <h2 className="text-3xl font-bold mb-6 text-center text-indigo-600">Welcome to Your Lesson</h2>
-        <p className="text-gray-600 mb-6 text-center">
-          Enter your name and a topic to start an engaging lesson experience.
-        </p>
-        <div className="flex flex-col gap-4">
+  // Initial Form View
+  if (!lessonStarted) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 p-6">
+        <div className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-lg">
+          <h2 className="text-3xl font-bold mb-6 text-center text-indigo-600">Welcome to Your Lesson</h2>
+          <p className="text-gray-600 mb-6 text-center">
+            Enter your name and a topic to start an engaging lesson experience.
+          </p>
+          <div className="flex flex-col gap-4">
             <input
               type="text"
               placeholder="Your Name"
@@ -102,7 +106,6 @@ export default function Lesson() {
               onChange={(e) => setUserName(e.target.value)}
               className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-semibold py-3 px-4 rounded-full placeholder-gray-200 shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-transform transform hover:scale-105"
             />
-          
             <input
               type="text"
               placeholder="Lesson Topic (e.g., Photosynthesis)"
@@ -110,32 +113,31 @@ export default function Lesson() {
               onChange={(e) => setLessonTopic(e.target.value)}
               className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-semibold py-3 px-4 rounded-full placeholder-gray-200 shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-transform transform hover:scale-105"
             />
-
-        <button
-          onClick={startLesson}
-          className={`mt-6 w-full bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-semibold py-3 rounded-lg hover:from-indigo-600 hover:to-blue-600 transition ${
-            loading && "opacity-50 cursor-not-allowed"
-          }`}
-          disabled={loading}
-        >
-          {loading ? "Loading..." : "Start Lesson"}
-        </button>
-
+          </div>
+          <button
+            onClick={startLesson}
+            className={`mt-6 w-full bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-semibold py-3 rounded-lg hover:from-indigo-600 hover:to-blue-600 transition ${
+              loading && "opacity-50 cursor-not-allowed"
+            }`}
+            disabled={loading}
+          >
+            {loading ? "Loading..." : "Start Lesson"}
+          </button>
+          {error && <p className="text-red-500 mt-4 text-center font-medium">{error}</p>}
+        </div>
       </div>
-        {error && (
-          <p className="text-red-500 mt-4 text-center font-medium">{error}</p>
-        )}
-  
-        {/* Display current lesson segment */}
+    );
+  }
+
+  // Lesson Content View
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 p-6">
+      <div className="mt-8 bg-gray-50 rounded-xl p-6 shadow-md">
         {currentSegment && (
-          <div className="mt-8 bg-gray-50 rounded-xl p-6 shadow-md">
-            <h3 className="text-xl font-semibold text-indigo-600 text-center">
-              {currentSegment.sub_subject}
-            </h3>
-            <p className="mt-4 text-gray-700 text-center">
-              {currentSegment.lesson_segment}
-            </p>
-  
+          <>
+            <h3 className="text-xl font-semibold text-indigo-600 text-center">{currentSegment.sub_subject}</h3>
+            <p className="mt-4 text-gray-700 text-center">{currentSegment.lesson_segment}</p>
+
             {/* Play Text-to-Speech Button */}
             <button
               onClick={playTTS}
@@ -143,14 +145,12 @@ export default function Lesson() {
             >
               🔊 Listen
             </button>
-  
-            {/* Render Question Section */}
+
             {currentSegment.question_data && (
               <>
                 <h4 className="mt-6 text-lg font-semibold text-center text-gray-800">
                   Question: {currentSegment.question_data.question}
                 </h4>
-  
                 <div className="mt-4 space-y-3">
                   {currentSegment.question_data.options.map((choice, index) => (
                     <label
@@ -173,7 +173,6 @@ export default function Lesson() {
                     </label>
                   ))}
                 </div>
-  
                 <button
                   onClick={submitAnswer}
                   className={`mt-6 w-full bg-purple-500 text-white py-2 px-4 rounded-lg hover:bg-purple-600 transition ${
@@ -183,7 +182,6 @@ export default function Lesson() {
                 >
                   Submit Answer
                 </button>
-  
                 {isCorrect !== null && (
                   <p
                     className={`mt-4 text-center font-semibold ${
@@ -193,7 +191,6 @@ export default function Lesson() {
                     {isCorrect ? "Correct! 🎉" : "Incorrect. Try Again."}
                   </p>
                 )}
-  
                 {isCorrect && currentSegmentIndex < lessonContent.length - 1 && (
                   <button
                     onClick={nextSegment}
@@ -204,7 +201,7 @@ export default function Lesson() {
                 )}
               </>
             )}
-          </div>
+          </>
         )}
       </div>
     </div>
