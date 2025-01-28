@@ -11,6 +11,9 @@ from app.UserInitializer import ProgressManager, UserManager
 from openai import OpenAI
 from fuzzywuzzy import fuzz
 import random
+import json
+import os
+from fastapi import FastAPI, HTTPException
 
 # Initialize FastAPI
 app = FastAPI()
@@ -143,13 +146,46 @@ def save_progress(request: SaveProgressRequest):
     progress_manager.save_progress(request.user, request.lesson, request.response)
     return {"message": "Progress saved successfully"}
 
+# File path to progress.json
+
+PROGRESS_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../progress.json"))
+
 @app.get("/get_progress/{user}")
 def get_progress(user: str):
     """Retrieve user progress."""
-    progress = progress_manager.get_progress(user)
-    if progress is None:
-        raise HTTPException(status_code=404, detail="No progress found for this user.")
-    return {"progress": progress}
+    try:
+        if not os.path.exists(PROGRESS_FILE):
+            raise HTTPException(status_code=500, detail="Progress file not found.")
+
+        with open(PROGRESS_FILE, "r") as file:
+            data = json.load(file)
+
+        # Debug logs to track progress
+        print("User requested:", user)
+        print("Data loaded from file:", data)
+
+        # Case-insensitive user name matching
+        user_key = next((key for key in data.keys() if key.lower() == user.lower()), None)
+        if not user_key:
+            raise HTTPException(status_code=404, detail=f"No progress found for user '{user}'.")
+
+        # Calculate progress by topic
+        progress_summary = {}
+        for topic, stats in data[user_key].items():
+            total_questions = stats.get("total_questions", 0)
+            correct_answers = stats.get("correct_answers", 0)
+            accuracy = (correct_answers / total_questions) * 100 if total_questions > 0 else 0
+            progress_summary[topic] = {
+                "correct_answers": correct_answers,
+                "total_questions": total_questions,
+                "accuracy": round(accuracy, 1),
+            }
+
+        return {"progress": progress_summary}
+
+    except Exception as e:
+        print(f"Error while processing progress for user {user}: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/ask_question")
 def ask_question(user: str, question: str):
