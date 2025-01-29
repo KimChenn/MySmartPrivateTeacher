@@ -95,9 +95,16 @@ export default function Lesson() {
       console.log("Listening for speech...");
       const response = await axios.post(`${API_BASE_URL}/speech_to_text`);
       setIsListening(false);
-
-      if (response.data.text) {
-        setUserAnswer(response.data.text);
+  
+      if (response.data.number) {
+        const selectedNumber = response.data.number;
+        
+        // Set the answer field to match the selected option
+        if (selectedNumber >= 1 && selectedNumber <= 4) {
+          setUserAnswer(currentSegment.question_data.options[selectedNumber - 1]); 
+        }
+      } else {
+        console.log("Speech did not match any valid number.");
       }
     } catch (err) {
       console.error("Error with speech recognition:", err);

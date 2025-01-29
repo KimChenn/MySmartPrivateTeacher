@@ -85,15 +85,19 @@ def get_user_age(user_name):
         raise HTTPException(status_code=500, detail="Invalid JSON format")
     return None  # Return None if user not found
 
-def fuzzy_match_number(text: str, number_map: dict):
-    """Match spoken text to numbers."""
+def fuzzy_match_number(text: str):
+    """Match spoken text to numbers 1-4."""
+    number_map = {
+        "one": 1, "two": 2, "three": 3, "four": 4}
+    
     best_match = None
     highest_score = 0
     for word, number in number_map.items():
         score = fuzz.ratio(text.lower(), word)
-        if score > highest_score and score > 70:  # Threshold
+        if score > highest_score and score > 70:  # 70% confidence threshold
             best_match = number
             highest_score = score
+
     return best_match
 
 def generate_mc_question(content_item):
@@ -166,7 +170,7 @@ def callback(indata, frames, time, status):
 
 @app.post("/speech_to_text")
 async def recognize_speech():
-    """Handles speech recognition and returns the transcribed text."""
+    """Handles speech recognition and returns a number (1-4) instead of raw text."""
     with sd.RawInputStream(samplerate=SAMPLE_RATE, blocksize=8000, dtype='int16',
                            channels=1, callback=callback):
         recognizer = vosk.KaldiRecognizer(model, SAMPLE_RATE)
@@ -178,7 +182,13 @@ async def recognize_speech():
                 result = json.loads(recognizer.Result())
                 recognized_text = result.get("text", "").strip()
                 print(f"Recognized Speech: {recognized_text}")  # Debugging output
-                return {"text": recognized_text}
+                
+                # Match spoken text to a number (1-4)
+                matched_number = fuzzy_match_number(recognized_text)
+                if matched_number:
+                    return {"number": matched_number}
+                else:
+                    return {"error": "Could not match a valid answer"}
 
 @app.post("/save_progress")
 def save_progress(request: SaveProgressRequest):
