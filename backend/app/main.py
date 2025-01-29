@@ -70,6 +70,21 @@ def speak(text: str):
     engine.say(text)
     engine.runAndWait()
 
+# Load users.json
+def get_user_age(user_name):
+    """Retrieve the age of a user from users.json"""
+    try:
+        with open("users.json", "r") as f:
+            users = json.load(f)
+        for user in users:
+            if user["name"].lower() == user_name.lower():  # Case-insensitive match
+                return user["age"]
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="Users file not found")
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Invalid JSON format")
+    return None  # Return None if user not found
+
 def fuzzy_match_number(text: str, number_map: dict):
     """Match spoken text to numbers."""
     best_match = None
@@ -109,6 +124,11 @@ The question should test understanding of the topic and be moderately challengin
 # API Endpoints
 @app.post("/start_lesson")
 def start_lesson(request: LessonRequest):
+    user_age = get_user_age(request.user)
+    
+    if user_age is None:
+        raise HTTPException(status_code=404, detail="User not found in database")
+    
     """Start a lesson on a specific subject."""
     sub_subjects = generate_sub_subjects(request.subject)
     if not sub_subjects:
@@ -118,7 +138,7 @@ def start_lesson(request: LessonRequest):
     lesson_content = [
         {
             "sub_subject": sub,
-            "lesson_segment": create_teaching_segment(sub, user_age=25),
+            "lesson_segment": create_teaching_segment(sub, user_age=user_age),
             "question_data": generate_mc_question(sub)  # Ensure question is included!
         }
         for sub in sub_subjects
