@@ -10,6 +10,7 @@ export default function Lesson() {
   const [currentSegmentIndex, setCurrentSegmentIndex] = useState(0); // Tracks current lesson step
   const [userAnswer, setUserAnswer] = useState("");
   const [isCorrect, setIsCorrect] = useState(null); // Tracks if answer is correct
+  const [explanation, setExplanation] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [lessonStarted, setLessonStarted] = useState(false); // Tracks whether the lesson has started
@@ -61,7 +62,15 @@ export default function Lesson() {
     }
 
     const correctAnswer = currentSegment.question_data.correct_answer.trim().toLowerCase();
-    setIsCorrect(userAnswer.trim().toLowerCase() === correctAnswer);
+    const explanation = currentSegment.question_data.explanation; // Get explanation
+
+    if (userAnswer.trim().toLowerCase() === correctAnswer) {
+      setIsCorrect(true);
+      setExplanation(""); // No explanation needed if correct
+    } else {
+      setIsCorrect(false);
+      setExplanation(explanation || "Explanation unavailable.");
+    }
     setAnswerSubmitted(true);
   };
 
@@ -71,6 +80,7 @@ export default function Lesson() {
       setCurrentSegmentIndex(currentSegmentIndex + 1);
       setIsCorrect(null);
       setUserAnswer("");
+      setExplanation("");
       setAnswerSubmitted(false);
     }
   };
@@ -216,6 +226,12 @@ export default function Lesson() {
                     {isCorrect ? "Correct! 🎉" : "Incorrect. :("}
                   </p>
                 )}
+                {/* Explanation for Incorrect Answers */}
+                {!isCorrect && explanation && (
+                  <p className="mt-2 text-gray-700 text-center">
+                  💡 Explanation: {explanation}
+                  </p>
+                )}    
                 {answerSubmitted && currentSegmentIndex < lessonContent.length - 1 && (
                   <button
                     onClick={nextSegment}

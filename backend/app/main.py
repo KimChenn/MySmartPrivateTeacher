@@ -100,27 +100,39 @@ def fuzzy_match_number(text: str):
 
     return best_match
 
-def generate_mc_question(content_item):
+def generate_mc_question(content_item, lesson_segment):
+    """Generate a multiple-choice question with an explanation for the correct answer."""
     prompt = f"""You are tasked with creating a multiple-choice question for a lesson.
-The topic is: {content_item}.
+    The topic is: {content_item}.
 
-Provide the following in JSON format:
-{{
-  "question": "Your question here",
-  "correct_answer": "The correct answer here",
-  "distractors": ["Wrong answer 1", "Wrong answer 2", "Wrong answer 3"]
-}}
-The question should test understanding of the topic and be moderately challenging. The correct answer must be precise and accurate. Distractors should be plausible but clearly incorrect upon deeper reflection."""
+    Provide the following in JSON format:
+    {{
+        "question": "Your question here",
+        "correct_answer": "The correct answer here",
+        "distractors": ["Wrong answer 1", "Wrong answer 2", "Wrong answer 3"]
+    }}
+    The question should test understanding of the topic and be moderately challenging. The correct answer must be precise and accurate. Distractors should be plausible but clearly incorrect upon deeper reflection."""
 
     response = call_openai_api(prompt, max_tokens=300)
     try:
         question_data = json.loads(response)
         options = [question_data["correct_answer"]] + question_data["distractors"]
         random.shuffle(options)
+
+        # Generate only the correct answer's explanation
+        explanation_prompt = f"""The topic is: {content_item}.
+        The lesson content is as follows:
+        {lesson_segment}
+
+        Explain concisely in one sentence why "{question_data["correct_answer"]}" is the correct answer."""
+        
+        explanation = call_openai_api(explanation_prompt, max_tokens=100)
+
         return {
             "question": question_data["question"],
             "options": options,
-            "correct_answer": question_data["correct_answer"]
+            "correct_answer": question_data["correct_answer"],
+            "explanation": explanation.strip() if explanation else "Explanation unavailable."
         }
     except (json.JSONDecodeError, KeyError):
         raise HTTPException(status_code=500, detail="Error parsing the response from the API.")
@@ -133,20 +145,20 @@ def start_lesson(request: LessonRequest):
     if user_age is None:
         raise HTTPException(status_code=404, detail="User not found in database")
     
-    """Start a lesson on a specific subject."""
     sub_subjects = generate_sub_subjects(request.subject)
     if not sub_subjects:
         raise HTTPException(status_code=400, detail="No subtopics generated for this subject.")
 
-    # Generate lesson content for each subtopic, including multiple-choice questions
-    lesson_content = [
-        {
+    lesson_content = []
+    
+    for sub in sub_subjects:
+        lesson_segment = create_teaching_segment(sub, user_age=user_age)  # Generate lesson once
+
+        lesson_content.append({
             "sub_subject": sub,
-            "lesson_segment": create_teaching_segment(sub, user_age=user_age),
-            "question_data": generate_mc_question(sub)  # Ensure question is included!
-        }
-        for sub in sub_subjects
-    ]
+            "lesson_segment": lesson_segment,  # Show the same segment to the user
+            "question_data": generate_mc_question(sub, lesson_segment)  # Use same segment for explanations
+        })
 
     return {"lesson": lesson_content}
 
