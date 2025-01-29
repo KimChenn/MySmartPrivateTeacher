@@ -51,7 +51,7 @@ export default function Lesson() {
     }
   };
 
-  const submitAnswer = () => {
+  const submitAnswer = async () => {
     if (!userAnswer.trim()) {
       return;
     }
@@ -64,14 +64,22 @@ export default function Lesson() {
     const correctAnswer = currentSegment.question_data.correct_answer.trim().toLowerCase();
     const explanation = currentSegment.question_data.explanation; // Get explanation
 
-    if (userAnswer.trim().toLowerCase() === correctAnswer) {
-      setIsCorrect(true);
-      setExplanation(""); // No explanation needed if correct
-    } else {
-      setIsCorrect(false);
-      setExplanation(explanation || "Explanation unavailable.");
-    }
+    let isAnswerCorrect = userAnswer.trim().toLowerCase() === correctAnswer;
+
+    setIsCorrect(isAnswerCorrect);
+    setExplanation(isAnswerCorrect ? "" : explanation || "Explanation unavailable.");
     setAnswerSubmitted(true);
+
+    try {
+      await axios.post(`${API_BASE_URL}/save_progress`, {
+        user: userName,
+        lesson: lessonTopic,
+        correct: isAnswerCorrect
+      });
+      console.log("Progress saved successfully.");
+    } catch (err) {
+      console.error("Error saving progress:", err);
+    }
   };
 
 

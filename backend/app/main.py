@@ -18,6 +18,7 @@ from fastapi import FastAPI, HTTPException
 # Initialize FastAPI
 app = FastAPI()
 
+PROGRESS_FILE = "progress.json"
 API_KEY = "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"
 
 # Add CORS Middleware for React
@@ -59,7 +60,22 @@ class SpeechToTextRequest(BaseModel):
 class SaveProgressRequest(BaseModel):
     user: str
     lesson: str
-    response: str
+    correct: bool  # Track whether the answer was correct
+
+def load_progress():
+    """Load progress from JSON file."""
+    if not os.path.exists(PROGRESS_FILE):
+        return {}
+    try:
+        with open(PROGRESS_FILE, "r") as file:
+            return json.load(file)
+    except json.JSONDecodeError:
+        return {}
+
+def save_progress(data):
+    """Save progress to JSON file."""
+    with open(PROGRESS_FILE, "w") as file:
+        json.dump(data, file, indent=4)
 
 def speak(text: str):
     """Convert text to speech with specific settings."""
@@ -202,16 +218,6 @@ async def recognize_speech():
                 else:
                     return {"error": "Could not match a valid answer"}
 
-@app.post("/save_progress")
-def save_progress(request: SaveProgressRequest):
-    """Save user progress."""
-    progress_manager.save_progress(request.user, request.lesson, request.response)
-    return {"message": "Progress saved successfully"}
-
-# File path to progress.json
-
-PROGRESS_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../progress.json"))
-
 @app.get("/get_progress/{user}")
 def get_progress(user: str):
     """Retrieve user progress."""
@@ -266,6 +272,33 @@ def ask_question(user: str, question: str):
     """
     answer = call_openai_api(prompt, max_tokens=200)
     return {"answer": answer}
+
+@app.post("/save_progress")
+def save_user_progress(request: SaveProgressRequest):
+    """Update and save user's progress with case-insensitive usernames."""
+    progress_data = load_progress()
+
+    normalized_user = request.user.lower()  # ✅ Convert username to lowercase
+
+    # Get or initialize user's progress
+    user_progress = progress_data.setdefault(normalized_user, {})
+
+    # Get or initialize lesson progress
+    lesson_progress = user_progress.setdefault(request.lesson.lower(), {  # ✅ Normalize lesson names too
+        "correct_answers": 0,
+        "total_questions": 0
+    })
+
+    # Update progress counts
+    lesson_progress["total_questions"] += 1
+    if request.correct:
+        lesson_progress["correct_answers"] += 1
+
+    # Save merged progress back to file
+    save_progress(progress_data)
+
+    return {"message": "Progress updated successfully"}
+
 
 # Utility functions for lesson content generation
 def generate_sub_subjects(subject):
