@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import SignIn from "./pages/SignIn";
 import Lesson from "./pages/Lesson"; // Import the lesson component
 import Progress from "./pages/Progress"; // Import the progress component
 
@@ -31,16 +32,9 @@ const App = () => {
           </div>
         </nav>
 
-        <header className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white py-3 shadow-md">
-          <div className="container mx-auto">
-            <h1 className="text-lg font-bold text-center">My Private Teacher</h1>
-          </div>
-        </header>
-
-
         <main className="container mx-auto py-8">
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<SignIn />} /> {/* First Page */}
             <Route path="/lesson" element={<Lesson />} />
             <Route path="/progress" element={<Progress />} />
           </Routes>

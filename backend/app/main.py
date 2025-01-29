@@ -18,6 +18,7 @@ from fastapi import FastAPI, HTTPException
 # Initialize FastAPI
 app = FastAPI()
 
+
 PROGRESS_FILE = "progress.json"
 API_KEY = "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"
 
@@ -33,7 +34,7 @@ app.add_middleware(
 
 # Initialize required components
 client = OpenAI(api_key=API_KEY)
-model_path = "./vosk-model-small-en-us-0.15" 
+model_path = "./vosk-model-small-en-us-0.15"
 model = vosk.Model(model_path)
 tts_engine = pyttsx3.init()
 progress_manager = ProgressManager()
@@ -87,6 +88,46 @@ def speak(text: str):
     engine.runAndWait()
 
 # Load users.json
+USERS_FILE = "users.json"
+
+def load_users():
+    """Load users from users.json"""
+    if not os.path.exists(USERS_FILE):
+        return []
+    try:
+        with open(USERS_FILE, "r") as file:
+            return json.load(file)
+    except json.JSONDecodeError:
+        return []
+
+def save_users(users):
+    """Save users to users.json"""
+    with open(USERS_FILE, "w") as file:
+        json.dump(users, file, indent=4)
+
+@app.post("/check_user")
+async def check_user(user_data: dict):
+    """Check if user exists; if not, add them"""
+    name = user_data.get("name")
+    age = user_data.get("age")
+
+    if not name or not age:
+        raise HTTPException(status_code=400, detail="Name and age are required")
+
+    users = load_users()
+
+    # Check if user already exists
+    for user in users:
+        if user["name"].lower() == name.lower():
+            return {"exists": True}
+
+    # If not, add the user
+    new_user = {"name": name, "age": age, "hobbies": []}  # Empty hobbies for now
+    users.append(new_user)
+    save_users(users)
+
+    return {"exists": False}
+
 def get_user_age(user_name):
     """Retrieve the age of a user from users.json"""
     try:
