@@ -8,11 +8,13 @@ export default function Lesson() {
   const [lessonTopic, setLessonTopic] = useState(""); // Stores lesson topic
   const [lessonContent, setLessonContent] = useState([]); // Stores all lesson segments
   const [currentSegmentIndex, setCurrentSegmentIndex] = useState(0); // Tracks current lesson step
-  const [selectedAnswer, setSelectedAnswer] = useState(null); // Tracks selected answer
+  const [userAnswer, setUserAnswer] = useState("");
   const [isCorrect, setIsCorrect] = useState(null); // Tracks if answer is correct
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [lessonStarted, setLessonStarted] = useState(false); // Tracks whether the lesson has started
+  const [answerSubmitted, setAnswerSubmitted] = useState(false);
+  const [isListening, setIsListening] = useState(false);
 
   const startLesson = async () => {
     if (!userName.trim() || !lessonTopic.trim()) {
@@ -25,7 +27,8 @@ export default function Lesson() {
     setLessonContent([]);
     setCurrentSegmentIndex(0); // Reset lesson index when starting a new lesson
     setIsCorrect(null);
-    setSelectedAnswer(null);
+    setUserAnswer("");
+    setAnswerSubmitted(false);
 
     try {
       console.log("Sending request to:", `${API_BASE_URL}/start_lesson`);
@@ -48,7 +51,7 @@ export default function Lesson() {
   };
 
   const submitAnswer = () => {
-    if (selectedAnswer === null) {
+    if (!userAnswer.trim()) {
       return;
     }
 
@@ -57,19 +60,18 @@ export default function Lesson() {
       return;
     }
 
-    const correctAnswer = currentSegment.question_data.correct_answer;
-    if (currentSegment.question_data.options[selectedAnswer] === correctAnswer) {
-      setIsCorrect(true);
-    } else {
-      setIsCorrect(false);
-    }
+    const correctAnswer = currentSegment.question_data.correct_answer.trim().toLowerCase();
+    setIsCorrect(userAnswer.trim().toLowerCase() === correctAnswer);
+    setAnswerSubmitted(true);
   };
+
 
   const nextSegment = () => {
     if (currentSegmentIndex < lessonContent.length - 1) {
       setCurrentSegmentIndex(currentSegmentIndex + 1);
       setIsCorrect(null);
-      setSelectedAnswer(null);
+      setUserAnswer("");
+      setAnswerSubmitted(false);
     }
   };
 
@@ -84,6 +86,22 @@ export default function Lesson() {
       });
     } catch (err) {
       console.error("Error playing text-to-speech:", err);
+    }
+  };
+
+  const startSpeechRecognition = async () => {
+    try {
+      setIsListening(true);
+      console.log("Listening for speech...");
+      const response = await axios.post(`${API_BASE_URL}/speech_to_text`);
+      setIsListening(false);
+
+      if (response.data.text) {
+        setUserAnswer(response.data.text);
+      }
+    } catch (err) {
+      console.error("Error with speech recognition:", err);
+      setIsListening(false);
     }
   };
 
@@ -151,34 +169,34 @@ export default function Lesson() {
                 <h4 className="mt-6 text-lg font-semibold text-center text-gray-800">
                   Question: {currentSegment.question_data.question}
                 </h4>
-                <div className="mt-4 space-y-3">
+                <ul className="mt-4 text-gray-700">
                   {currentSegment.question_data.options.map((choice, index) => (
-                    <label
-                      key={index}
-                      className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition ${
-                        selectedAnswer === index
-                          ? "bg-indigo-50 border-indigo-500"
-                          : "bg-white border-gray-300"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="answer"
-                        value={index}
-                        onChange={() => setSelectedAnswer(index)}
-                        checked={selectedAnswer === index}
-                        className="w-5 h-5 text-indigo-600 focus:ring-indigo-500"
-                      />
-                      <span className="text-gray-700">{choice}</span>
-                    </label>
+                    <li key={index}>
+                      {index + 1}. {choice}
+                    </li>
                   ))}
-                </div>
+                </ul>
+
+                <input
+                  type="text"
+                  placeholder="Enter your answer"
+                  value={userAnswer}
+                  onChange={(e) => setUserAnswer(e.target.value)}
+                  className="mt-4 w-full border-2 border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                />
+                <button
+                  onClick={startSpeechRecognition}
+                  className="mt-4 w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition"
+                >
+                  {isListening ? "🎤 Listening..." : "🎤 Speak"}
+                </button>
+
                 <button
                   onClick={submitAnswer}
                   className={`mt-6 w-full bg-purple-500 text-white py-2 px-4 rounded-lg hover:bg-purple-600 transition ${
-                    selectedAnswer === null && "opacity-50 cursor-not-allowed"
+                    !userAnswer.trim() && "opacity-50 cursor-not-allowed"
                   }`}
-                  disabled={selectedAnswer === null}
+                  disabled={!userAnswer.trim()}
                 >
                   Submit Answer
                 </button>
@@ -188,10 +206,10 @@ export default function Lesson() {
                       isCorrect ? "text-green-500" : "text-red-500"
                     }`}
                   >
-                    {isCorrect ? "Correct! 🎉" : "Incorrect. Try Again."}
+                    {isCorrect ? "Correct! 🎉" : "Incorrect. :("}
                   </p>
                 )}
-                {isCorrect && currentSegmentIndex < lessonContent.length - 1 && (
+                {answerSubmitted && currentSegmentIndex < lessonContent.length - 1 && (
                   <button
                     onClick={nextSegment}
                     className="mt-4 w-full bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition"

@@ -7,7 +7,7 @@ import json
 import requests
 import numpy as np
 import sounddevice as sd
-from app.UserInitializer import ProgressManager, UserManager
+from UserInitializer import ProgressManager, UserManager
 from openai import OpenAI
 from fuzzywuzzy import fuzz
 import random
@@ -37,6 +37,14 @@ model = vosk.Model(model_path)
 tts_engine = pyttsx3.init()
 progress_manager = ProgressManager()
 user_manager = UserManager()
+
+# Load the Vosk model (ensure it's downloaded)
+MODEL_PATH = "./vosk-model-small-en-us-0.15"  # Adjust path if needed
+model = vosk.Model(MODEL_PATH)
+
+# Define speech parameters
+SAMPLE_RATE = 16000
+q = queue.Queue()
 
 # Request models for APIs
 class LessonRequest(BaseModel):
@@ -130,15 +138,27 @@ def text_to_speech(request: TextToSpeechRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error in text-to-speech: {str(e)}")
     
+def callback(indata, frames, time, status):
+    """Audio stream callback function."""
+    if status:
+        print(status, flush=True)
+    q.put(bytes(indata))
+
 @app.post("/speech_to_text")
-def speech_to_text(file: UploadFile = File(...)):
-    """Convert speech to text."""
-    audio_data = np.frombuffer(file.file.read(), dtype=np.int16)
-    recognizer = vosk.KaldiRecognizer(model, 16000)
-    if recognizer.AcceptWaveform(audio_data.tobytes()):
-        result = json.loads(recognizer.Result())
-        return {"transcription": result.get("text", "")}
-    raise HTTPException(status_code=400, detail="Speech recognition failed.")
+async def recognize_speech():
+    """Handles speech recognition and returns the transcribed text."""
+    with sd.RawInputStream(samplerate=SAMPLE_RATE, blocksize=8000, dtype='int16',
+                           channels=1, callback=callback):
+        recognizer = vosk.KaldiRecognizer(model, SAMPLE_RATE)
+        print("Listening for speech...")
+
+        while True:
+            data = q.get()
+            if recognizer.AcceptWaveform(data):
+                result = json.loads(recognizer.Result())
+                recognized_text = result.get("text", "").strip()
+                print(f"Recognized Speech: {recognized_text}")  # Debugging output
+                return {"text": recognized_text}
 
 @app.post("/save_progress")
 def save_progress(request: SaveProgressRequest):
