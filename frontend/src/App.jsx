@@ -6,10 +6,14 @@ import Lesson from "./pages/Lesson";
 import Progress from "./pages/Progress";
 import Dashboard from "./pages/Dashboard"; // Import the Dashboard page
 import LessonSummary from "./pages/LessonSummary";
+import NavBar from "./components/NavBar"; 
 
 const App = () => {
   return (
     <Router>
+      {/* Add NavBar at the top */}
+      <NavBar />
+
       <main className="container mx-auto py-8">
         <Routes>
           <Route path="/" element={<Home />} /> {/* Home Page */}

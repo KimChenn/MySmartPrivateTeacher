@@ -147,3 +147,62 @@ footer {
 .mb-5 {
   margin-bottom: 3rem;
 }
+
+
+/* NavBar Styling */
+.navbar {
+  background: linear-gradient(to right, #4f46e5, #3b82f6); /* Indigo to blue gradient */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding: 1rem 2rem;
+}
+
+.navbar-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.navbar-logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+}
+
+.navbar-logo:hover {
+  transform: scale(1.05);
+}
+
+.navbar-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.nav-link {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #e5e7eb; /* Light gray */
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px; /* Rounded for pill shape */
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.nav-link:hover {
+  background-color: #ffffff; /* White background */
+  color: #3b82f6; /* Blue text */
+}
+
+.nav-link.active {
+  background-color: #ffffff; /* White background for active */
+  color: #4f46e5; /* Indigo text for active */
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for active */
+}
