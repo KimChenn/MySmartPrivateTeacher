@@ -339,6 +339,23 @@ def ask_question(request: AskQuestionRequest):
 
     return {"answer": answer}
 
+@app.post("/free_speech_to_text")
+async def recognize_free_speech():
+    """Handles general speech recognition and returns the transcribed text."""
+    with sd.RawInputStream(samplerate=SAMPLE_RATE, blocksize=8000, dtype='int16',
+                           channels=1, callback=callback):
+        recognizer = vosk.KaldiRecognizer(model, SAMPLE_RATE)
+        print("Listening for general speech...")
+
+        while True:
+            data = q.get()
+            if recognizer.AcceptWaveform(data):
+                result = json.loads(recognizer.Result())
+                recognized_text = result.get("text", "").strip()
+                print(f"Recognized Speech: {recognized_text}")  # Debugging output
+
+                return {"text": recognized_text} if recognized_text else {"error": "No speech recognized"}
+
 
 @app.post("/save_progress")
 def save_progress(request: SaveProgressRequest):

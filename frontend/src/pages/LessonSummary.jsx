@@ -8,6 +8,7 @@ const LessonSummary = () => {
   const [lessonSummary, setLessonSummary] = useState(null);
   const [studentQuestion, setStudentQuestion] = useState("");
   const [questionResponse, setQuestionResponse] = useState("");
+  const [isListening, setIsListening] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -49,6 +50,24 @@ const LessonSummary = () => {
     }
   };
 
+  const startSpeechRecognition = async () => {
+    try {
+      setIsListening(true);
+      console.log("Listening for speech...");
+      const response = await axios.post(`${API_BASE_URL}/free_speech_to_text`);
+      setIsListening(false);
+  
+      if (response.data.text) {
+        setStudentQuestion((prev) => prev + " " + response.data.text);
+      } else {
+        console.log("No speech recognized.");
+      }
+    } catch (err) {
+      console.error("Error with speech recognition:", err);
+      setIsListening(false);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 p-6">
       <div className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-lg text-center">
@@ -73,6 +92,12 @@ const LessonSummary = () => {
           onChange={(e) => setStudentQuestion(e.target.value)}
           className="mt-4 w-full border-2 border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-400"
         />
+        <button
+          onClick={startSpeechRecognition}
+          className="mt-4 w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition"
+        >
+          {isListening ? "🎤 Listening..." : "🎤 Speak"}
+        </button>
         <button
           onClick={askQuestion}
           className="mt-4 w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition"
