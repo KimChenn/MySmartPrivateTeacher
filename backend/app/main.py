@@ -105,6 +105,7 @@ def save_users(users):
     with open(USERS_FILE, "w") as file:
         json.dump(users, file, indent=4)
 
+
 @app.post("/check_user")
 async def check_user(user_data: dict):
     """Check if user exists; if not, add them"""
@@ -127,6 +128,25 @@ async def check_user(user_data: dict):
     save_users(users)
 
     return {"exists": False}
+
+@app.post("/login_user")
+async def login_user(user_data: dict):
+    """Check if user exists in users.json"""
+    name = user_data.get("name")
+
+    if not name:
+        raise HTTPException(status_code=400, detail="Name is required")
+
+    users = load_users()
+
+    # Check if user exists
+    for user in users:
+        if user["name"].lower() == name.lower():
+            return {"exists": True}
+
+    # If user is not found, return false
+    return {"exists": False}
+
 
 def get_user_age(user_name):
     """Retrieve the age of a user from users.json"""
