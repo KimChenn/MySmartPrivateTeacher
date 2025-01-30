@@ -15,23 +15,24 @@ export default function SignIn() {
       setError("Please enter your name and age.");
       return;
     }
-
+  
     try {
       const response = await axios.post(`${API_BASE_URL}/check_user`, {
         name,
         age: parseInt(age),
       });
-
+  
       if (!response.data.exists) {
         console.log("User registered:", name);
       }
-
-      navigate("/lesson"); // Move to lessons after signing up
+  
+      navigate("/dashboard"); // ✅ Redirect to Dashboard
     } catch (err) {
       console.error("Error signing up:", err);
       setError("Failed to sign up. Please try again.");
     }
   };
+  
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-100 to-gray-300 p-6">

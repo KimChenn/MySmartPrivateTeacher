@@ -14,12 +14,12 @@ export default function LogIn() {
       setError("Please enter your name.");
       return;
     }
-
+  
     try {
       const response = await axios.post(`${API_BASE_URL}/login_user`, { name });
-
+  
       if (response.data.exists) {
-        navigate("/lesson"); // ✅ Move to lessons if user exists
+        navigate("/dashboard"); // ✅ Redirect to Dashboard
       } else {
         setError("User not found. Please sign up first.");
       }
@@ -28,6 +28,7 @@ export default function LogIn() {
       setError("Failed to log in. Please try again.");
     }
   };
+  
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-100 to-gray-300 p-6">
