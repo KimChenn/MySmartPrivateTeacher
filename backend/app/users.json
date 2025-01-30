@@ -1,10 +1,10 @@
 [
     {
         "name": "Kim",
-        "age": 20,
-        "hobbies": [
-            "go to the gym",
-            "dancing"
-        ]
+        "age": 20
+    },
+    {
+        "name": "ohad",
+        "age": 25
     }
 ]

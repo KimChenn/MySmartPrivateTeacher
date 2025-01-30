@@ -160,7 +160,8 @@ def get_user_age(user_name):
         raise HTTPException(status_code=500, detail="Users file not found")
     except json.JSONDecodeError:
         raise HTTPException(status_code=500, detail="Invalid JSON format")
-    return None  # Return None if user not found
+
+    raise HTTPException(status_code=404, detail="User does not exist. Please enter a valid username.")
 
 def fuzzy_match_number(text: str):
     """Match spoken text to numbers 1-4."""

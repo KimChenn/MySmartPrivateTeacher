@@ -4,13 +4,13 @@ class UserInitializer:
     def __init__(self, name, age, hobbies):
         self.name = name
         self.age = age
-        self.hobbies = hobbies
+        #self.hobbies = hobbies
 
     def to_dict(self):
         return {
             "name": self.name,
             "age": self.age,
-            "hobbies": self.hobbies
+            #"hobbies": self.hobbies
         }
 
 class UserManager:
@@ -31,7 +31,7 @@ class UserManager:
                 UserInitializer(
                     name=data["name"],
                     age=data["age"],
-                    hobbies=data["hobbies"]
+                    #hobbies=data["hobbies"]
                 ) for data in users_data
             ]
 
@@ -52,7 +52,7 @@ class UserManager:
                     print("Please enter a positive integer for age.")
             except ValueError:
                 print("Invalid input. Please enter an integer for age.")
-
+        '''
     def get_valid_hobbies(self, prompt):
         while True:
             hobbies_input = input(prompt)
@@ -60,6 +60,7 @@ class UserManager:
             if hobbies:
                 return hobbies
             print("Please enter at least one hobby, separated by commas if multiple.")
+        '''
 
     def display_user_progress(self, user_name, progress_manager):
         progress = progress_manager.get_user_progress(user_name)

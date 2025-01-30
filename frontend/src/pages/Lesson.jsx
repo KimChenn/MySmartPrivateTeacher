@@ -45,7 +45,13 @@ export default function Lesson() {
       setLessonStarted(true); // Transition to the lesson content view
     } catch (err) {
       console.error("Error starting lesson:", err);
-      setError("Failed to fetch lesson. Please check backend.");
+
+      // Check if the error is due to a missing user
+      if (err.response && err.response.status === 404) {
+        setError("User does not exist. Please enter a valid username.");
+      } else {
+        setError("Failed to fetch lesson. Please check backend.");
+      }
     } finally {
       setLoading(false);
     }
