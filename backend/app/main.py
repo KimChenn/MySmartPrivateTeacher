@@ -14,6 +14,8 @@ import random
 import json
 import os
 from fastapi import FastAPI, HTTPException
+from typing import List
+
 
 # Initialize FastAPI
 app = FastAPI()
@@ -62,6 +64,11 @@ class SaveProgressRequest(BaseModel):
     user: str
     lesson: str
     correct: bool  # Track whether the answer was correct
+
+class AskQuestionRequest(BaseModel):
+    user: str
+    lesson: str
+    question: str
 
 def load_progress():
     """Load progress from JSON file."""
@@ -318,48 +325,59 @@ def get_progress(user: str):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.post("/ask_question")
-def ask_question(user: str, question: str):
-    """Answer a user's question based on the lesson content."""
-    combined_content = "\n".join([
-        f"Topic: {segment['sub_subject']}\n{segment['lesson_segment']}" for segment in []
-    ])
+def ask_question(request: AskQuestionRequest):
+    #Answer a user's question based on the lesson content.
+
     prompt = f"""
-    A student asked the following question:
-    "{question}"
+    A student just completed a lesson on '{request.lesson}' and asked the following question:
+    "{request.question}"
 
-    The lesson content is as follows:
-    {combined_content}
-
-    Provide a concise answer to the question in 2-3 sentences.
+    Provide a clear and concise answer based on the lesson's core concepts.
     """
+    
     answer = call_openai_api(prompt, max_tokens=200)
+
     return {"answer": answer}
 
+
 @app.post("/save_progress")
-def save_user_progress(request: SaveProgressRequest):
-    """Update and save user's progress with case-insensitive usernames."""
-    progress_data = load_progress()
+def save_progress(request: SaveProgressRequest):
+    """Update user progress using ProgressManager with correct incrementation."""
+    
+    correct_answers = 1 if request.correct else 0  #  Increment only if correct
+    total_questions = 1  # Always increment total questions
 
-    normalized_user = request.user.lower()  # ✅ Convert username to lowercase
+    #  Use ProgressManager's method to correctly update and save progress
+    progress_manager.update_user_progress(
+        user_name=request.user,
+        topic=request.lesson,
+        correct_answers=correct_answers,
+        total_questions=total_questions
+    )
 
-    # Get or initialize user's progress
-    user_progress = progress_data.setdefault(normalized_user, {})
+    return {
+        "message": "Progress updated successfully",
+        "progress": progress_manager.get_user_progress(request.user)
+    }
 
-    # Get or initialize lesson progress
-    lesson_progress = user_progress.setdefault(request.lesson.lower(), {  # ✅ Normalize lesson names too
-        "correct_answers": 0,
-        "total_questions": 0
-    })
 
-    # Update progress counts
-    lesson_progress["total_questions"] += 1
-    if request.correct:
-        lesson_progress["correct_answers"] += 1
+@app.get("/lesson-summary/{user}/{lesson}")
+def get_lesson_summary(user: str, lesson: str):
+    """Retrieve lesson summary based on user and lesson name (only for the current lesson)."""
+    
+    progress = progress_manager.get_user_progress(user.lower())
 
-    # Save merged progress back to file
-    save_progress(progress_data)
+    # Ensure progress exists for this user and lesson
+    if not progress or lesson.lower() not in progress:
+        raise HTTPException(status_code=404, detail="No progress found for this user and lesson.")
 
-    return {"message": "Progress updated successfully"}
+    # Get current lesson progress (not total progress)
+    lesson_progress = progress[lesson.lower()]
+    return {
+        "correct_answers": lesson_progress["correct_answers"],
+        "total_questions": lesson_progress["total_questions"],
+        "message": f"Lesson Complete! You answered {lesson_progress['correct_answers']} questions correctly out of {lesson_progress['total_questions']}."
+    }
 
 
 # Utility functions for lesson content generation
