@@ -189,6 +189,8 @@ def generate_mc_question(content_item, lesson_segment):
     """Generate a multiple-choice question with an explanation for the correct answer."""
     prompt = f"""You are tasked with creating a multiple-choice question for a lesson.
     The topic is: {content_item}.
+    The lesson content is as follows:
+        {lesson_segment}
 
     Provide the following in JSON format:
     {{
@@ -204,12 +206,12 @@ def generate_mc_question(content_item, lesson_segment):
         options = [question_data["correct_answer"]] + question_data["distractors"]
         random.shuffle(options)
 
-        # Generate only the correct answer's explanation
-        explanation_prompt = f"""The topic is: {content_item}.
-        The lesson content is as follows:
-        {lesson_segment}
+        explanation_prompt = f"""The lesson topic is: {content_item}.
+        The question is: "{question_data["question"]}"
 
-        Explain concisely in one sentence why "{question_data["correct_answer"]}" is the correct answer."""
+        Explain concisely in one sentence why "{question_data["correct_answer"]}" is the correct answer.
+        Keep it specific to the question rather than the general lesson topic.
+        """
         
         explanation = call_openai_api(explanation_prompt, max_tokens=100)
 
