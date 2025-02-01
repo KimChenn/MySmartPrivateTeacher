@@ -36,7 +36,7 @@ Installation
 
 1. Clone the Repository
 
-git clone https://github.com/your-username/private-teacher-app.git
+git clone https://github.com/KimChenn/MySmartPrivateTeacher.git
 cd private-teacher-app
 
 2. Install Dependencies
