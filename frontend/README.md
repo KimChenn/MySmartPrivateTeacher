@@ -1,70 +1,94 @@
-# Getting Started with Create React App
+# **Private Teacher App**
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Welcome to the **Private Teacher App** – an interactive platform designed to provide personalized lessons, track user progress, and enhance learning through features like text-to-speech and speech recognition.
 
-## Available Scripts
+---
 
+## **Features**
+
+- **User Authentication**: Users can sign up or log in to access their personalized dashboard.
+- **Dynamic Lessons**: AI-generated lessons tailored to the user's preferences and age.
+- **Progress Tracking**: View detailed progress reports to track your learning journey.
+- **Interactive Quizzes**: Engage in multiple-choice quizzes with speech-to-text functionality.
+- **Modern UI**: A clean, responsive design with gradient styling for a seamless user experience.
+
+---
+
+## **Tech Stack**
+
+### **Frontend**
+- **React.js**: Built with a modern JavaScript library for interactive UIs.
+- **Tailwind CSS**: Styled with a utility-first CSS framework for rapid development.
+- **React Router**: Navigation between pages.
+
+### **Backend**
+- **FastAPI**: Provides robust API endpoints for lesson generation, user authentication, and progress tracking.
+- **Vosk**: Speech recognition library for interactive quizzes.
+- **OpenAI API**: Powers AI-generated lesson content and quiz explanations.
+
+---
+
+## **Installation**
+
+### 1. **Clone the Repository**
+```bash
+git clone https://github.com/KimChenn/MySmartPrivateTeacher
+cd private-teacher-app
+
+### 2. **Install Dependencies**
+```bash
+npm install
+
+
+Install backend dependencies (if using a virtual environment for Python):
+
+pip install -r requirements.txt
+
+3. Start the Backend
+Ensure the FastAPI backend is running:
+
+uvicorn main:app --reload
+
+4. Start the Frontend
+Run the React development server:
+
+npm start
+
+Open http://localhost:3000 to view the app in your browser.
+
+
+Usage
+1. Sign Up / Log In
+New users can sign up by providing their name and age.
+Returning users can log in to access their dashboard.
+2. Dashboard
+Choose between:
+Starting a Lesson: Generate lessons tailored to your age and preferences.
+Viewing Progress: Track your learning progress with detailed statistics.
+3. Interactive Features
+Use the text-to-speech feature to hear lessons aloud.
+Answer quiz questions via speech-to-text for an immersive experience.
+
+
+Available Scripts
 In the project directory, you can run:
 
-### `npm start`
+npm start
+Runs the app in development mode.
+Open http://localhost:3000 to view it.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+npm run build
+Builds the app for production into the build folder.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Contributing
+Contributions are welcome! Please follow these steps:
 
-### `npm test`
+Fork the repository.
+1. Create a new branch: git checkout -b feature/your-feature.
+2. Commit your changes: git commit -m "Add some feature".
+3. Push to the branch: git push origin feature/your-feature.
+4. Open a pull request.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Contact
+For any inquiries or issues, please contact chenkimi10@gmail.com
 
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
