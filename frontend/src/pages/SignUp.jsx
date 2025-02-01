@@ -34,7 +34,7 @@ export default function SignUp() {
         });
       }
   
-      navigate("/dashboard"); //  Redirect to Dashboard
+      navigate("/login"); //  Redirect to Dashboard
     } catch (err) {
       console.error("Error signing up:", err);
       setError("Failed to sign up. Please try again.");

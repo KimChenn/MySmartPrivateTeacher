@@ -39,6 +39,7 @@ cd private-teacher-app
 ```bash
 npm install
 
+npm install mixpanel-browser
 
 Install backend dependencies (if using a virtual environment for Python):
 

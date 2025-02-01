@@ -6,5 +6,15 @@
     {
         "name": "ohad",
         "age": 25
+    },
+    {
+        "name": "lin",
+        "age": 10,
+        "hobbies": []
+    },
+    {
+        "name": "rom",
+        "age": 30,
+        "hobbies": []
     }
 ]
