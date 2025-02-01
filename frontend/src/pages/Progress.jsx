@@ -1,27 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import { useUser } from "../UserContext";
 
 const API_BASE_URL = "http://localhost:8000";
 
 export default function Progress() {
-  const [userName, setUserName] = useState(""); // Stores user name input
+  const { userName } = useUser();
   const [progressData, setProgressData] = useState(null); // Stores fetched progress data
   const [error, setError] = useState(""); // Stores any error messages
   const [loading, setLoading] = useState(false); // Indicates loading state
 
-  // Fetch progress data when user submits the name
-  const fetchProgress = async () => {
-    const trimmedName = userName.trim(); // Trim whitespace
-    if (!trimmedName) {
-      setError("Please enter your name to view progress.");
+  // ✅ Wrap fetchProgress in useCallback to avoid re-creating the function
+  const fetchProgress = useCallback(async () => {
+    if (!userName?.trim()) {
+      setError("Please log in to view progress.");
       return;
     }
-  
+
     setLoading(true);
     setError("");
-  
+
     try {
-      const response = await axios.get(`${API_BASE_URL}/get_progress/${trimmedName}`);
+      const response = await axios.get(`${API_BASE_URL}/get_progress/${userName}`);
       setProgressData(response.data.progress);
     } catch (err) {
       console.error(err);
@@ -29,34 +29,28 @@ export default function Progress() {
     } finally {
       setLoading(false);
     }
-  };
-  
+  }, [userName]); // ✅ Depend only on userName
+
+  // ✅ Now fetchProgress is stable and can be included in useEffect
+  useEffect(() => {
+    if (userName) {
+      fetchProgress();
+    }
+  }, [userName, fetchProgress]); // ✅ Include fetchProgress safely
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-100 to-gray-300 p-6">
       <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center text-blue-600">View Your Progress</h2>
-        <p className="text-gray-600 mb-6 text-center">Enter your name to view your learning progress.</p>
+        <h2 className="text-2xl font-bold text-center text-blue-600">Your Learning Progress</h2>
+        
+        {userName ? (
+          <p className="text-gray-600 mb-6 text-center">Showing progress for <strong>{userName}</strong>.</p>
+        ) : (
+          <p className="text-red-500 mb-6 text-center">Please log in to view progress.</p>
+        )}
 
-        {/* Input for user name */}
-        <input
-          type="text"
-          placeholder="Your Name"
-          value={userName}
-          onChange={(e) => setUserName(e.target.value)}
-          className="w-full py-3 px-4 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 mb-4"
-        />
-
-        {/* Submit Button */}
-        <button
-          onClick={fetchProgress}
-          className={`w-full py-3 px-4 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold shadow-md hover:from-blue-600 hover:to-indigo-600 transition ${
-            loading && "opacity-50 cursor-not-allowed"
-          }`}
-          disabled={loading}
-        >
-          {loading ? "Loading..." : "View Progress"}
-        </button>
+        {/* Loading State */}
+        {loading && <p className="text-center text-gray-600">Loading progress...</p>}
 
         {/* Error Message */}
         {error && (

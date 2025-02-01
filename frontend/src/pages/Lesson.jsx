@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import mixpanel from "../mixpanel";
+import { useUser } from "../UserContext";
 
 const API_BASE_URL = "http://localhost:8000"; // Ensure FastAPI is running
 
 export default function Lesson() {
-  const [userName, setUserName] = useState(""); // Stores user name
+  const { userName} = useUser(); // Get the logged-in user
   const [lessonTopic, setLessonTopic] = useState(""); // Stores lesson topic
   const [lessonContent, setLessonContent] = useState([]); // Stores all lesson segments
   const [currentSegmentIndex, setCurrentSegmentIndex] = useState(0); // Tracks current lesson step
@@ -23,9 +24,15 @@ export default function Lesson() {
 
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!userName) {
+      navigate("/login"); // Redirect if no user is logged in
+    }
+  }, [userName, navigate]);
+
   const startLesson = async () => {
-    if (!userName.trim() || !lessonTopic.trim()) {
-      setError("Please enter both your name and a lesson topic.");
+    if (!lessonTopic.trim()) {
+      setError("Please enter a lesson topic.");
       return;
     }
 
@@ -180,7 +187,6 @@ export default function Lesson() {
               type="text"
               placeholder="Your Name"
               value={userName}
-              onChange={(e) => setUserName(e.target.value)}
               className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-semibold py-3 px-4 rounded-full placeholder-gray-200 shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-transform transform hover:scale-105"
             />
             <input
@@ -220,7 +226,6 @@ export default function Lesson() {
             type="text"
             placeholder="Your Name"
             value={userName}
-            onChange={(e) => setUserName(e.target.value)}
             className="w-full bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-semibold py-3 px-4 rounded-full placeholder-gray-200 shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-transform transform hover:scale-105"
           />
           <input
