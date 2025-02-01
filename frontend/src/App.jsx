@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
-import SignIn from "./pages/SignIn";
+import SignUp from "./pages/SignUp";
 import LogIn from "./pages/LogIn";
 import Lesson from "./pages/Lesson";
 import Progress from "./pages/Progress";
@@ -17,7 +17,7 @@ const App = () => {
       <main className="container mx-auto py-8">
         <Routes>
           <Route path="/" element={<Home />} /> {/* Home Page */}
-          <Route path="/signin" element={<SignIn />} /> {/* Sign Up Page */}
+          <Route path="/signin" element={<SignUp />} /> {/* Sign Up Page */}
           <Route path="/login" element={<LogIn />} /> {/* Log In Page */}
           <Route path="/dashboard" element={<Dashboard />} /> {/* Dashboard */}
           <Route path="/lesson" element={<Lesson />} /> {/* Lesson */}

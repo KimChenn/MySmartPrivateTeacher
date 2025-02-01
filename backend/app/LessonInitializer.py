@@ -20,7 +20,7 @@ class LessonInitializer:
         self.api_key = api_key
         self.progress_manager = ProgressManager()  # Initialize ProgressManager
         self.tts_engine = pyttsx3.init()  # Initialize text-to-speech engine
-        self.model = vosk.Model("/Users/ohadhacham/Desktop/idea_to_app/MySmartPrivateTeacher/backend/app/vosk-model-small-en-us-0.15")  # Path to Vosk model directory
+        self.model = vosk.Model("./vosk-model-small-en-us-0.15")  # Path to Vosk model directory
         self.q = queue.Queue()
         self.samplerate = 16000
         self.number_map = {"one": 1, "two": 2, "three": 3, "four": 4}

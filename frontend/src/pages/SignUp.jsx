@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import mixpanel from "../mixpanel";
 
 const API_BASE_URL = "http://localhost:8000";
 
-export default function SignIn() {
+export default function SignUp() {
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const navigate = useNavigate();
@@ -24,12 +25,27 @@ export default function SignIn() {
   
       if (!response.data.exists) {
         console.log("User registered:", name);
+
+        // Track successful sign-up in Mixpanel
+        mixpanel.track("User Signed Up", {
+          name,
+          age: parseInt(age),
+          timestamp: new Date().toISOString(),
+        });
       }
   
-      navigate("/dashboard"); // ✅ Redirect to Dashboard
+      navigate("/dashboard"); //  Redirect to Dashboard
     } catch (err) {
       console.error("Error signing up:", err);
       setError("Failed to sign up. Please try again.");
+
+      // Track failed sign-up in Mixpanel
+      mixpanel.track("Sign Up Failed", {
+        name,
+        age: parseInt(age),
+        error: err.message,
+        timestamp: new Date().toISOString(),
+      });
     }
   };
   

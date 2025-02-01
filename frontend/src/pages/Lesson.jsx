@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import mixpanel from "../mixpanel";
 
 const API_BASE_URL = "http://localhost:8000"; // Ensure FastAPI is running
 
@@ -48,6 +49,11 @@ export default function Lesson() {
       console.log("Response received:", res.data);
       setLessonContent(res.data.lesson || []); // Store lesson response safely
       setLessonStarted(true); // Transition to the lesson content view
+      // Track event in Mixpanel
+      mixpanel.track("Lesson Started", {
+        user: userName,
+        topic: lessonTopic,
+    });
     } catch (err) {
       console.error("Error starting lesson:", err);
 
@@ -80,6 +86,17 @@ export default function Lesson() {
     setIsCorrect(isAnswerCorrect);
     setExplanation(isAnswerCorrect ? "" : explanation || "Explanation unavailable.");
     setAnswerSubmitted(true);
+
+    // Track user answer in Mixpanel
+    mixpanel.track("Answer Submitted", {
+      user: userName,
+      topic: lessonTopic,
+      question: currentSegment.question_data.question,
+      userAnswer,
+      isCorrect: isAnswerCorrect,
+    });
+
+
     // Track session-based progress (only for this lesson run)
     setSessionTotalQuestions(prev => prev + 1);
     if (isAnswerCorrect) {

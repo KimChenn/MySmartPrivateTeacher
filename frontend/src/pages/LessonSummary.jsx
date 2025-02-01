@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
+import mixpanel from "../mixpanel";
 
 const API_BASE_URL = "http://localhost:8000";
 
@@ -12,13 +13,13 @@ const LessonSummary = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // ✅ Extract user & lesson from state (passed from Lesson.jsx)
+  // Extract user & lesson from state (passed from Lesson.jsx)
   const { userName, lessonTopic, sessionCorrectAnswers, sessionTotalQuestions } = location.state || {};
 
   useEffect(() => {
     if (!userName || !lessonTopic) {
       console.error("Missing user or lesson data, redirecting to home...");
-      navigate("/"); // ✅ Redirect to home if no user/lesson data
+      navigate("/"); // Redirect to home if no user/lesson data
       return;
     }
 
@@ -29,9 +30,17 @@ const LessonSummary = () => {
       .then((res) => {
         console.log("Lesson summary response:", res.data);
         setLessonSummary(res.data);
+
+        // Track lesson completion in Mixpanel
+        mixpanel.track("Lesson Completed", {
+          user: userName,
+          topic: lessonTopic,
+          correctAnswers: sessionCorrectAnswers,
+          totalQuestions: sessionTotalQuestions,
+        });
       })
       .catch((err) => console.error("Error fetching lesson summary:", err));
-  }, [userName, lessonTopic, navigate]);
+  }, [userName, lessonTopic, navigate, sessionCorrectAnswers, sessionTotalQuestions]);
 
   const askQuestion = async () => {
     if (!studentQuestion.trim()) return;
@@ -44,6 +53,13 @@ const LessonSummary = () => {
       });
 
       setQuestionResponse(res.data.answer);
+
+      // Track user question event in Mixpanel
+      mixpanel.track("Asked Question", {
+        user: userName,
+        topic: lessonTopic,
+        question: studentQuestion.trim(),
+      });
     } catch (err) {
       console.error("Error fetching response:", err);
       setQuestionResponse("Failed to retrieve an answer. Try again.");
@@ -59,6 +75,14 @@ const LessonSummary = () => {
   
       if (response.data.text) {
         setStudentQuestion((prev) => prev + " " + response.data.text);
+
+        // Track speech-to-text event in Mixpanel
+        mixpanel.track("Used Speech-to-Text", {
+          user: userName,
+          topic: lessonTopic,
+          speechText: response.data.text,
+        });
+
       } else {
         console.log("No speech recognized.");
       }

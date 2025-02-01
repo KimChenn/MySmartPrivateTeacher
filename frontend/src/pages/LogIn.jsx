@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import mixpanel from "../mixpanel";
 
 const API_BASE_URL = "http://localhost:8000"; // Ensure FastAPI is running
 
@@ -19,13 +20,33 @@ export default function LogIn() {
       const response = await axios.post(`${API_BASE_URL}/login_user`, { name });
   
       if (response.data.exists) {
-        navigate("/dashboard"); // ✅ Redirect to Dashboard
+        navigate("/dashboard"); // Redirect to Dashboard
+
+        // Track successful login in Mixpanel
+        mixpanel.track("User Logged In", {
+          name,
+          timestamp: new Date().toISOString(),
+        });
       } else {
         setError("User not found. Please sign up first.");
+
+        // Track failed login attempt in Mixpanel
+        mixpanel.track("Login Failed", {
+          name,
+          reason: "User Not Found",
+          timestamp: new Date().toISOString(),
+        });
       }
     } catch (err) {
       console.error("Error logging in:", err);
       setError("Failed to log in. Please try again.");
+
+      // Track login error in Mixpanel
+      mixpanel.track("Login Error", {
+        name,
+        error: err.message,
+        timestamp: new Date().toISOString(),
+      });
     }
   };
   
